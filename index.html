@@ -458,8 +458,7 @@ body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) 
         <div class="box"><textarea id="friend" rows="1" dir="rtl" placeholder="מה שהיית אומר לו, במשפט אחד"></textarea></div>
       </div>
     </div>
-    <button class="btn" type="button" data-go="m3">הבא</button>
-    <p class="optional">אפשר גם רק לחשוב, בלי לכתוב.</p>
+    <button class="btn" type="button" id="to-m3" data-go="m3" disabled>הבא</button>
   </section>
 
   <!-- השכל 3: בעוד שנה -->
@@ -483,7 +482,7 @@ body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) 
         </div>
       </div>
     </div>
-    <button class="btn" type="button" data-go="verdict">הבא</button>
+    <button class="btn" type="button" id="to-verdict" data-go="verdict" disabled>הבא</button>
   </section>
 
   <!-- ההכרעה -->
@@ -724,6 +723,8 @@ body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) 
   function validate(){
     $('#to-m1').disabled = !draft.what.trim();
     $('#to-m2').disabled = !(draft.best.trim() && draft.worst.trim());
+    $('#to-m3').disabled = !draft.friend.trim();
+    $('#to-verdict').disabled = !draft.regret;
     $('#commit').disabled = !(draft.step.trim() && draft.when);
   }
   FIELDS.forEach(function(id){
