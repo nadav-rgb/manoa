@@ -1028,9 +1028,9 @@ body.dark .music-btn{background:var(--green);color:var(--on-green);border-color:
     }).catch(function(){});
   }
   function musicLevel(v, sec){ if(!cur) return; cur.level = v; if(!cur.ducked) fadeTo(cur, v, sec || 1); }
-  // בזמן שהמיקרופון מקשיב המוזיקה ממשיכה, אבל בשקט, מתחת לקול. כדי שהמיקרופון לא יחשוב שהיא דיבור,
-  // musicDb מודד בכל רגע כמה חזק היא מתנגנת, והמעקב אחרי הדיבור מעלה את הסף שלו בהתאם
-  var MUSIC_UNDER = .2, mbuf = new Uint8Array(1024);
+  // בזמן שהמיקרופון מקשיב המוזיקה משתתקת. ניסינו להשאיר אותה בשקט מתחת לקול, אבל בטלפון אמיתי (אנדרואיד)
+  // המיקרופון מגביר אותה אוטומטית, והמערכת חשבה שהדיבור לא נגמר. musicDb נשאר, כדי שהסף יעלה אם בכל זאת נשאר צליל
+  var MUSIC_UNDER = 0, mbuf = new Uint8Array(1024);
   function musicDuck(on){ if(!cur) return; cur.ducked = on; fadeTo(cur, on ? cur.level * MUSIC_UNDER : cur.level, on ? .4 : 1.2); }
   function musicDb(){
     if(!cur || !cur.node) return -100;
@@ -1178,7 +1178,8 @@ body.dark .music-btn{background:var(--green);color:var(--on-green);border-color:
     return function(now, db, mdb){
       if(!t0){ t0 = now; last = now; }
       var dt = now - last; last = now;
-      if(mdb > -70){ recent.push(mdb); if(recent.length > 6) recent.shift(); }
+      // כשהמוזיקה שותקת שוכחים את העוצמות הקודמות שלה, כדי שלא ימשיכו להחזיק את הסף גבוה
+      if(mdb > -70){ recent.push(mdb); if(recent.length > 6) recent.shift(); } else recent.length = 0;
       if(now - t0 < 600){
         if(now - t0 > 150){
           floorSum += db; floorN++;
@@ -1204,6 +1205,9 @@ body.dark .music-btn{background:var(--green);color:var(--on-green);border-color:
         }
         s.inUtt = true; s.lastAbove = now; s.paused = false;
         s.talk += s.pending + dt; s.pending = 0;
+        // ביטחון: אם הקול לא נעצר (רעש בחדר, אנשים שמדברים מסביב), אחרי הזמן שלוקח לומר את המשפט
+        // ועוד מרווח, האמירה נספרת בכל זאת, כדי שאף אחד לא ייתקע
+        if(s.talk >= total * Math.max(s.mps, 200) * 1.5 + 800){ reset(); onUtter(); return; }
       } else if(s.inUtt){
         var gap = now - s.lastAbove;
         if(gap <= SYNC.hang) s.pending += dt;
