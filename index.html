@@ -721,7 +721,7 @@ body.dark .music-btn{background:var(--green);color:var(--on-green);border-color:
     </div>
   </section>
 
-  <!-- אחרי היומן: משפטי מחץ שנבראים לאט עם המוזיקה, ונשארים כתובים -->
+  <!-- בסוף הדרך (אחרי ״יצאתי לדרך״ או אחרי היומן): משפטי מחץ שנבראים לאט עם המוזיקה, ונשארים כתובים -->
   <section class="view" id="view-finale" aria-labelledby="finale-title" hidden>
     <h2 class="sr-only" id="finale-title" tabindex="-1">לפני שאתה יוצא לדרך</h2>
     <div class="fin-lines" id="fin-lines" aria-live="polite"></div>
@@ -1515,7 +1515,7 @@ body.dark .music-btn{background:var(--green);color:var(--on-green);border-color:
     blast();
   });
   $('#blast-done').addEventListener('click', function(){
-    clearTimeout(blastTimer); $('#blast').hidden = true; go('home');
+    clearTimeout(blastTimer); $('#blast').hidden = true; toFinale();
   });
 
   // לקבוע ביומן: באייפון נפתח היומן של הטלפון (קובץ יומן שנוצר בטלפון), ובשאר הטלפונים Google Calendar.
@@ -1583,7 +1583,7 @@ body.dark .music-btn{background:var(--green);color:var(--on-green);border-color:
     toFinale();
   });
 
-  // אחרי היומן: משפטי מחץ שנבראים אות אחרי אות, לאט, עם המוזיקה, ונשארים כתובים.
+  // בסוף הדרך, אחרי ״יצאתי לדרך״ או אחרי היומן: משפטי מחץ שנבראים אות אחרי אות, לאט, עם המוזיקה, ונשארים כתובים.
   // הקודמים מתעמעמים קצת כשמשפט חדש נברא, והמסך גולל לאט אל החדש. בסוף: "אתה מלך."
   // 20 משפטים בהשראת ארבעה משפיענים, מהרגוע אל החזק. הנוסח העברי שלנו, לא תרגום של ציטוט.
   // מקורות: ציוצים של הורמוזי ב-X; Can't Hurt Me של גוגינס; Discipline Equals Freedom ו-Extreme Ownership של ג'וקו;
@@ -1611,11 +1611,12 @@ body.dark .music-btn{background:var(--green);color:var(--on-green);border-color:
     { t:'5-4-3-2-1. זוז, לפני שהמוח יעצור אותך.', gold:true }
   ];
   var FINALE_CREDIT = 'המשפטים בהשראת אלכס הורמוזי, דייוויד גוגינס, ג׳וקו ווילינק ומל רובינס.';
-  var finTimer = 0;
+  var finTimer = 0, finWait = false, finResume = null;
   function toFinale(){
-    // באייפון קובץ היומן עלול לטעון את הדף מחדש. הסימון הזה מחזיר אותך לכאן כשתחזור
+    // היומן עלול לטעון את הדף מחדש. הסימון הזה מחזיר אותך לכאן כשתחזור, עד שהמשפטים נגמרים
     store.set('manoa.finale', Date.now());
-    setTimeout(function(){ go('finale'); }, 600);
+    // אם היומן נפתח מעל הדף, המשפטים מחכים שתחזור
+    setTimeout(function(){ if(document.hidden) finWait = true; else go('finale'); }, 600);
   }
   function finaleLine(L){
     var p = el('p', 'fin-line' + (L.gold ? ' gold' : '')), n = 0;
@@ -1632,13 +1633,14 @@ body.dark .music-btn{background:var(--green);color:var(--on-green);border-color:
     return { p:p, letters:n };
   }
   function finaleStart(){
-    store.set('manoa.finale', 0);
     var box = $('#fin-lines');
     box.textContent = ''; $('#fin-end').hidden = true; $('#fin-skip').hidden = false;
     $('#fin-credit').textContent = FINALE_CREDIT;
-    clearTimeout(finTimer);
+    clearTimeout(finTimer); finResume = null;
     var i = 0;
     (function next(){
+      // הדף מוסתר (היומן פתוח, המסך כבוי): עוצרים, וממשיכים כשחוזרים
+      if(document.hidden){ finResume = next; return; }
       if(i >= FINALE.length) return finaleEnd();
       var made = finaleLine(FINALE[i++]);
       Array.prototype.forEach.call(box.children, function(x){ x.classList.add('past'); });
@@ -1648,11 +1650,17 @@ body.dark .music-btn{background:var(--green);color:var(--on-green);border-color:
     })();
   }
   function finaleEnd(){
-    clearTimeout(finTimer);
+    clearTimeout(finTimer); finResume = null;
+    store.set('manoa.finale', 0);
     $('#fin-skip').hidden = true; $('#fin-end').hidden = false;
     setTimeout(function(){ $('#fin-end').scrollIntoView({ behavior:'smooth', block:'end' }); }, 50);
   }
-  function finaleStop(){ clearTimeout(finTimer); }
+  function finaleStop(){ clearTimeout(finTimer); finResume = null; }
+  document.addEventListener('visibilitychange', function(){
+    if(document.hidden) return;
+    if(finWait){ finWait = false; setTimeout(function(){ go('finale'); }, 400); }
+    else if(finResume){ var f = finResume; finResume = null; finTimer = setTimeout(f, 700); }
+  });
   $('#fin-skip').addEventListener('click', function(){
     clearTimeout(finTimer);
     var box = $('#fin-lines');
