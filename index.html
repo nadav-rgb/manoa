@@ -212,7 +212,7 @@ body.nav .view:not([hidden]){animation:enter var(--t-view) var(--ease)}
 .say{display:flex;flex-direction:column;align-items:center;gap:12px;margin-block-start:6px}
 .say-how{font-weight:500;font-size:1.0625rem}
 .mic{
-  position:relative;width:84px;height:84px;border-radius:50%;border:0;cursor:pointer;
+  position:relative;width:84px;height:84px;margin-block:10px 14px;border-radius:50%;border:0;cursor:pointer;
   display:grid;place-items:center;background:var(--green);color:var(--on-green);
   transition:transform var(--t-press) var(--ease), opacity var(--t-hover) var(--ease);
 }
@@ -227,6 +227,16 @@ body.nav .view:not([hidden]){animation:enter var(--t-view) var(--ease)}
 .say-count span{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--gold-ink);transition:background-color var(--t-hover) var(--ease)}
 .say-count .on{background:var(--gold);border-color:var(--gold)}
 .say-state{color:var(--muted);min-height:1.6rem}
+.say-ok{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--gold-ink)}
+.say-ok svg{width:76px;height:76px;color:var(--gold)}
+.say-ok svg path{stroke-dasharray:30;stroke-dashoffset:30}
+.say-ok.go svg{animation:pop 420ms var(--ease) both}
+.say-ok.go svg path{animation:draw 380ms 120ms var(--ease) forwards}
+.say-ok p{font-weight:700;font-size:1.375rem}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}
+@keyframes draw{to{stroke-dashoffset:0}}
+.say-text span{transition:color 140ms linear}
+.say-text .lit{color:var(--gold-ink)}
 .say-note{color:var(--muted);font-size:.875rem;text-wrap:balance}
 .say .link{margin:0;min-height:36px;font-size:.9375rem;color:var(--muted)}
 .dots{display:flex;justify-content:center;gap:8px;margin-block-start:20px}
@@ -840,17 +850,19 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
         else {
           var thr = Math.min(Math.max(floor / Math.max(n, 1) * 2.5, .02), .06);
           var loud = rms > thr;
-          onLevel(Math.min(rms / thr, 3), loud);
           if(loud){ inUtt = true; voiced += dt; lastVoice = now; }
           else if(inUtt && now - lastVoice > 900){
             if(voiced >= 1400) onUtter();
             inUtt = false; voiced = 0;
           }
+          onLevel(Math.min(rms / thr, 3), loud, voiced);
         }
       }, 40);
     }).catch(function(){ if(mic === mine){ micStop(); onFail(); } });
   }
-  function sayWidget(L){
+  var CHECK_BIG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  var MS_PER_WORD = 240; // בערך כמה זמן קול יש בכל מילה, כדי להדליק את המילים בקצב הדיבור
+  function sayWidget(L, textEl){
     var need = L.times || 3, got = 0;
     var wrap = el('div', 'say');
     wrap.appendChild(el('p', 'say-how', 'תגיד את זה בקול, ' + (need === 3 ? 'שלוש פעמים' : need + ' פעמים') + '.'));
@@ -860,23 +872,37 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
     var state = el('p', 'say-state', 'לחץ על המיקרופון, ואז דבר.');
     state.setAttribute('aria-live', 'polite');
     var note = el('p', 'say-note', 'המיקרופון רק שומע שיש קול. שום דבר לא מוקלט ולא נשלח.');
+    var ok = el('div', 'say-ok'); ok.hidden = true; ok.setAttribute('aria-live', 'polite');
+    ok.innerHTML = CHECK_BIG;
+    var okText = el('p'); ok.appendChild(okText);
     var manual = el('button', 'link', 'המיקרופון לא קולט? אפשר ללחוץ אחרי כל פעם'); manual.type = 'button'; manual.hidden = true;
     var after = L.after ? el('p', 'line-small', L.after) : null;
     if(after) after.hidden = true;
-    [btn, count, state, note, manual].forEach(function(n){ wrap.appendChild(n); });
+    [btn, count, ok, state, note, manual].forEach(function(n){ wrap.appendChild(n); });
     if(after) wrap.appendChild(after);
 
+    // המילים במשפט נדלקות בזהב בזמן שמדברים, ומתאפסות לפני האמירה הבאה
+    var words = textEl ? textEl.querySelectorAll('span') : [], holding = false, okTimer = 0;
+    function light(k){ Array.prototype.forEach.call(words, function(w, i){ w.classList.toggle('lit', i < k); }); }
+    function cheer(text){
+      clearTimeout(okTimer);
+      okText.textContent = text; ok.hidden = false; state.hidden = true;
+      ok.classList.remove('go'); void ok.offsetWidth; ok.classList.add('go');
+    }
     function mark(){
       got++;
       Array.prototype.forEach.call(count.children, function(s, n){ s.className = n < got ? 'on' : ''; });
+      light(words.length); holding = true;
       if(got >= need) return finish();
       state.textContent = 'עוד ' + (need - got === 1 ? 'פעם אחת' : 'פעמיים') + '.';
+      cheer(need - got === 1 ? 'מעולה! כעת פעם אחרונה.' : 'מעולה! כעת פעם נוספת.');
+      okTimer = setTimeout(function(){ ok.hidden = true; state.hidden = false; holding = false; light(0); }, 1800);
     }
     function finish(){
       micStop();
       btn.disabled = true; btn.style.setProperty('--op', 0);
       manual.hidden = true; note.hidden = true;
-      state.textContent = 'יפה. שמעת את זה בקול שלך.';
+      cheer('מעולה! שמעת את זה בקול שלך.');
       if(after) after.hidden = false;
       $('#line-next').disabled = false;
     }
@@ -895,10 +921,11 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
       if(mic) return;
       state.textContent = 'מקשיב. תגיד את המשפט.';
       manual.hidden = false;
-      listen(mark, function(lvl, loud){
+      listen(mark, function(lvl, loud, voiced){
         btn.style.setProperty('--lvl', 1 + Math.min(lvl, 2) * .12);
         btn.style.setProperty('--op', loud ? 1 : .35);
-      }, function(){ tapMode('אין גישה למיקרופון. תגיד בקול, ואז לחץ ״אמרתי״.'); });
+        if(!holding) light(Math.min(words.length, Math.floor(voiced / MS_PER_WORD)));
+      },function(){ tapMode('אין גישה למיקרופון. תגיד בקול, ואז לחץ ״אמרתי״.'); });
     });
     manual.addEventListener('click', function(){ tapMode(); });
     return wrap;
@@ -909,10 +936,20 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
     micStop();
     var box = $('#lines'), L = LINES[lineIdx];
     box.classList.remove('go'); box.textContent = '';
-    box.appendChild(el('p', 'line-big', L.say ? '״' + L.say + '״' : L.big));
+    var big = el('p', 'line-big', L.say ? null : L.big);
+    if(L.say){
+      big.classList.add('say-text');
+      big.appendChild(document.createTextNode('״'));
+      L.say.split(' ').forEach(function(w, i){
+        if(i) big.appendChild(document.createTextNode(' '));
+        big.appendChild(el('span', null, w));
+      });
+      big.appendChild(document.createTextNode('״'));
+    }
+    box.appendChild(big);
     if(L.who) box.appendChild(el('p', 'line-who', L.who));
     if(L.small) box.appendChild(el('p', 'line-small', L.small));
-    if(L.say) box.appendChild(sayWidget(L));
+    if(L.say) box.appendChild(sayWidget(L, big));
     $('#line-next').disabled = !!L.say;
     void box.offsetWidth; box.classList.add('go');
     var dots = $('#dots'); dots.textContent = '';
