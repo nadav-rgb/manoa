@@ -324,6 +324,20 @@ body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) 
 .row-links{display:flex;justify-content:center;gap:18px;margin-block-start:10px}
 .row-links .link{margin:0}
 
+/* מוזיקת רקע */
+.music-btn{
+  position:fixed;z-index:40;inset-inline-end:max(14px, env(safe-area-inset-left, 0px));bottom:max(14px, env(safe-area-inset-bottom, 0px));
+  width:44px;height:44px;border-radius:50%;display:grid;place-items:center;cursor:pointer;
+  background:var(--page);color:var(--green);border:1.5px solid var(--line);box-shadow:0 2px 10px rgb(13 53 45 / .12);
+  transition:transform var(--t-press) var(--ease);
+}
+.music-btn:active{transform:scale(.94)}
+.music-btn .off{display:none}
+.music-btn[aria-pressed="false"]{color:var(--muted)}
+.music-btn[aria-pressed="false"] .on{display:none}
+.music-btn[aria-pressed="false"] .off{display:block}
+#view-engine, #view-lines, #view-done{padding-block-end:56px}
+
 /* ספירה לאחור */
 .blast{
   position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
@@ -670,6 +684,12 @@ body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) 
 
 </div>
 
+<!-- מוזיקת רקע: הפעלה וכיבוי -->
+<button class="music-btn" id="music-btn" type="button" aria-pressed="true" aria-label="מוזיקת רקע" hidden>
+  <svg class="on" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+  <svg class="off" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="m16 9 5 6M21 9l-5 6"/></svg>
+</button>
+
 <!-- אני הולך ברגע זה: ספירה לאחור מ-5, ואז יוצאים -->
 <div class="blast" id="blast" role="dialog" aria-modal="true" aria-label="יוצאים לדרך" hidden>
   <p class="blast-say" id="blast-say">סופרים יחד, בקול</p>
@@ -703,6 +723,7 @@ body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) 
   function show(name){
     VIEWS.forEach(function(v){ $('#view-' + v).hidden = (v !== name); });
     breathReset(); micStop();
+    musicFor(name);
     if(name === 'verdict') renderRecap();
     if(name === 'list') renderList();
     if(name === 'lines') renderLine();
@@ -866,6 +887,74 @@ body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) 
   $('#sound').addEventListener('click', function(){ soundOn = !soundOn; store.set('manoa.sound', soundOn); syncSound(); });
   syncSound();
 
+  // מוזיקת רקע (Pixabay, רישיון חופשי): Cinematic Powerful של AtlasAudio בשלבים השקטים של המנוע,
+  // ו-Inspiring Cinematic Music של Tunetank ב"יוצאים לדרך". הקובץ נטען רק כשמתקרבים למסך שלו ומתנגן חלש בלולאה.
+  // היא עוברת דרך Web Audio כמו צלילי הנשימה, ולכן באייפון שעל "שקט" היא בדרך כלל לא נשמעת. אפשר לכבות אותה.
+  var MUSIC = { engine:'music/engine.mp3', done:'music/done.mp3' };
+  var VIEW_MUSIC = { engine:['engine', .16], lines:['engine', .24], done:['done', .28] };
+  var musicOn = store.get('manoa.music', true) !== false;
+  var raw = {}, bufs = {}, cur = null;
+  function audio(){
+    try{
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      if(actx.state === 'suspended') actx.resume();
+    }catch(e){ actx = null; }
+    return actx;
+  }
+  function prefetch(name){
+    if(!raw[name]) raw[name] = fetch(MUSIC[name]).then(function(r){ return r.arrayBuffer(); });
+    return raw[name];
+  }
+  function decoded(name){
+    if(!bufs[name]) bufs[name] = prefetch(name).then(function(b){
+      return new Promise(function(res, rej){ actx.decodeAudioData(b, res, rej); });
+    });
+    return bufs[name];
+  }
+  function fadeTo(m, v, sec){
+    var g = m.gain.gain, t = actx.currentTime;
+    g.cancelScheduledValues(t);
+    g.setValueAtTime(Math.max(g.value, .0001), t);
+    g.exponentialRampToValueAtTime(Math.max(v, .0001), t + sec);
+  }
+  function musicStop(sec){
+    if(!cur) return;
+    var m = cur; cur = null;
+    fadeTo(m, .0001, sec || .8);
+    setTimeout(function(){ try{ if(m.node) m.node.stop(); }catch(e){} m.gain.disconnect(); }, ((sec || .8) + .1) * 1000);
+  }
+  function musicPlay(name, level){
+    if(cur && cur.name === name){ musicLevel(level, 1.2); return; }
+    musicStop();
+    if(!musicOn || !audio()) return;
+    var me = cur = { name:name, node:null, gain:actx.createGain(), level:level, ducked:false };
+    me.gain.gain.value = .0001;
+    me.gain.connect(actx.destination);
+    decoded(name).then(function(buf){
+      if(cur !== me) return;
+      var n = actx.createBufferSource();
+      n.buffer = buf; n.loop = true; n.connect(me.gain); n.start();
+      me.node = n;
+      fadeTo(me, me.ducked ? .0001 : me.level, 2);
+    }).catch(function(){});
+  }
+  function musicLevel(v, sec){ if(!cur) return; cur.level = v; if(!cur.ducked) fadeTo(cur, v, sec || 1); }
+  // בזמן שהמיקרופון מקשיב המוזיקה משתתקת, כדי שהמיקרופון לא ישמע אותה וייחשב לדיבור
+  function musicDuck(on){ if(!cur) return; cur.ducked = on; fadeTo(cur, on ? .0001 : cur.level, on ? .25 : 1.2); }
+  function musicFor(name){
+    var btn = $('#music-btn'), m = VIEW_MUSIC[name];
+    btn.hidden = !m;
+    btn.setAttribute('aria-pressed', String(musicOn));
+    if(name === 'brake') prefetch('engine');
+    if(name === 'ball') prefetch('done');
+    if(m) musicPlay(m[0], m[1]); else musicStop();
+  }
+  $('#music-btn').addEventListener('click', function(){
+    musicOn = !musicOn; store.set('manoa.music', musicOn);
+    var v = VIEWS.filter(function(x){ return !$('#view-' + x).hidden; })[0];
+    if(musicOn) musicFor(v); else { musicStop(.4); $('#music-btn').setAttribute('aria-pressed', 'false'); }
+  });
+
   function breathReset(){
     timers.forEach(clearTimeout); timers = []; hush();
     orb.style.transition = 'none'; orb.style.transform = 'scale(.5)'; orb.classList.remove('hold');
@@ -938,11 +1027,13 @@ body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) 
     mic.stream && mic.stream.getTracks().forEach(function(t){ t.stop(); });
     try{ mic.ctx.close(); }catch(e){}
     mic = null;
+    musicDuck(false);
   }
   // מעביר כל 20 מילישניות את עוצמת הקול במיקרופון, בדציבלים.
   function listen(onFrame, onFail){
     var Ctx = window.AudioContext || window.webkitAudioContext;
     if(!Ctx || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return onFail();
+    musicDuck(true);
     var ctx = new Ctx();
     if(ctx.state === 'suspended') ctx.resume();
     mic = { ctx:ctx, stream:null, iv:0 };
@@ -1249,6 +1340,7 @@ body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) 
   }
   $('#go-now').addEventListener('click', function(){
     if(lastGo){ lastGo.when = 'עכשיו'; lastGo.now = Date.now(); save(); }
+    musicLevel(.7, 4.6); // המוזיקה מתגברת לאורך הספירה ומגיעה לשיא ב"לך!"
     $('#done-step').textContent = lastGo ? lastGo.step + ', עכשיו' : '';
     blast();
   });
