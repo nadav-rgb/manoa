@@ -209,6 +209,26 @@ body.nav .view:not([hidden]){animation:enter var(--t-view) var(--ease)}
 .line-big{font-weight:700;font-size:1.75rem;line-height:1.35;text-wrap:balance}
 .line-small{color:var(--muted);font-size:var(--fs-body);text-wrap:balance}
 .line-who{color:var(--gold-ink);font-weight:500;font-size:1rem}
+.say{display:flex;flex-direction:column;align-items:center;gap:12px;margin-block-start:6px}
+.say-how{font-weight:500;font-size:1.0625rem}
+.mic{
+  position:relative;width:84px;height:84px;border-radius:50%;border:0;cursor:pointer;
+  display:grid;place-items:center;background:var(--green);color:var(--on-green);
+  transition:transform var(--t-press) var(--ease), opacity var(--t-hover) var(--ease);
+}
+.mic::after{
+  content:"";position:absolute;inset:-9px;border-radius:50%;border:2.5px solid var(--gold);
+  transform:scale(var(--lvl,1));opacity:var(--op,0);transition:transform 90ms linear, opacity 160ms linear;
+}
+.mic:active:not(:disabled){transform:scale(.95)}
+.mic:disabled{opacity:.35;cursor:default}
+.mic.tap{width:auto;height:51px;padding-inline:36px;border-radius:var(--r-button);font-weight:700;font-size:var(--fs-button)}
+.say-count{display:flex;gap:10px}
+.say-count span{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--gold-ink);transition:background-color var(--t-hover) var(--ease)}
+.say-count .on{background:var(--gold);border-color:var(--gold)}
+.say-state{color:var(--muted);min-height:1.6rem}
+.say-note{color:var(--muted);font-size:.875rem;text-wrap:balance}
+.say .link{margin:0;min-height:36px;font-size:.9375rem;color:var(--muted)}
 .dots{display:flex;justify-content:center;gap:8px;margin-block-start:20px}
 .dots span{width:7px;height:7px;border-radius:50%;background:var(--line);transition:background-color var(--t-hover) var(--ease)}
 .dots .on{background:var(--gold)}
@@ -564,7 +584,7 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
 
   function show(name){
     VIEWS.forEach(function(v){ $('#view-' + v).hidden = (v !== name); });
-    breathReset();
+    breathReset(); micStop();
     if(name === 'verdict') renderRecap();
     if(name === 'list') renderList();
     if(name === 'lines') renderLine();
@@ -777,19 +797,123 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
   // (Gilovich & Medvec 1995), לפגוש את המכשול (WOOP, Oettingen), ורק אז הצעד הראשון ומתי (Gollwitzer 2006).
   var LINES = [
     { big:'מה שנשאר בגוף עכשיו, זה לא רק פחד.', small:'אותו לב דופק גם בהתרגשות. תגיד לעצמך בשקט: אני מתרגש.' },
-    { big:'״האושר הכי גדול בחיים שלך ממתין לך מטר אחרי הפחד הכי גדול שלך.״', who:'וויל סמית׳' },
-    { big:'עכשיו תדמיין: עשית את זה.', small:'איך אתה עומד? איך הכתפיים? איפה בגוף אתה מרגיש את זה? תישאר שם שלוש נשימות.' },
+    { say:'האושר הכי גדול שלי, ממתין לי מטר אחרי הפחד הכי גדול שלי.', who:'בהשראת וויל סמית׳', times:3 },
+    { big:'עכשיו עצום עיניים, ודמיין.', small:'דמיין בצורה חווייתית ואמיתית: הלכת בפועל ועשית את המעשה, והצלחת. הכול עבר בהצלחה רבה. איך אתה עומד? איפה בגוף אתה מרגיש את זה? תישאר שם שלוש נשימות, ואז פתח עיניים.' },
     { big:'מה יספרו עליך הנכדים שלך?', small:'שפחדת ולא עשית, ונשארת בינוני? או שנכנסת בכל הכוח, נגד כל הסיכויים, והצלחת?' },
     { big:'תדמיין: עברה שנה. מישהו אחר עומד במקום שהיה צריך להיות שלך.', small:'איך זה מרגיש בגוף? אתה באמת רוצה להיות שם?' },
-    { big:'אפשר לנצח 99% מהאנשים, אם שולטים בבושה שבדחייה, בשעמום שבחזרתיות, ובכאב שבביקורת.', who:'אלכס הורמוזי', small:'הבושה שאתה מרגיש עכשיו היא בדיוק הדבר שרוב האנשים לא עוברים. אתה כבר באמצע.' }
+    { say:'אני יכול לנצח 99% מהאנשים, כשאני שולט בבושה שבדחייה, בשעמום שבחזרתיות ובכאב שבביקורת.', who:'בהשראת אלכס הורמוזי', times:3, after:'הבושה שאתה מרגיש עכשיו היא בדיוק הדבר שרוב האנשים לא עוברים. אתה כבר באמצע.' }
   ];
+  // אמירה בקול: המיקרופון רק מודד עוצמת קול בתוך הטלפון, כדי לזהות שנאמר משפט.
+  // לא מזהים מילים, כי זיהוי מילים בדפדפן שולח את הקול לשרתים של גוגל או אפל. שום דבר לא מוקלט ולא נשלח.
+  var MIC_SVG = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>';
+  var mic = null;
+  function micStop(){
+    if(!mic) return;
+    clearInterval(mic.iv);
+    mic.stream && mic.stream.getTracks().forEach(function(t){ t.stop(); });
+    try{ mic.ctx.close(); }catch(e){}
+    mic = null;
+  }
+  // קורא ל-onUtter בכל פעם שנאמר משפט: לפחות 1.4 שניות של קול, ואחריהן שקט של כמעט שנייה.
+  function listen(onUtter, onLevel, onFail){
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    if(!Ctx || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return onFail();
+    var ctx = new Ctx();
+    if(ctx.state === 'suspended') ctx.resume();
+    mic = { ctx:ctx, stream:null, iv:0 };
+    var mine = mic;
+    navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:true, noiseSuppression:true } }).then(function(stream){
+      if(mic !== mine){ stream.getTracks().forEach(function(t){ t.stop(); }); return; }
+      mic.stream = stream;
+      var an = ctx.createAnalyser(); an.fftSize = 1024;
+      ctx.createMediaStreamSource(stream).connect(an);
+      var buf = new Uint8Array(an.fftSize);
+      var t0 = performance.now(), last = t0, floor = 0, n = 0, voiced = 0, lastVoice = 0, inUtt = false;
+      mic.iv = setInterval(function(){
+        if(mic !== mine) return;
+        var now = performance.now();
+        an.getByteTimeDomainData(buf);
+        var s = 0;
+        for(var i = 0; i < buf.length; i++){ var v = (buf[i] - 128) / 128; s += v * v; }
+        var rms = Math.sqrt(s / buf.length), dt = now - last; last = now;
+        if(now - t0 < 400){ floor += rms; n++; }
+        else {
+          var thr = Math.min(Math.max(floor / Math.max(n, 1) * 2.5, .02), .06);
+          var loud = rms > thr;
+          onLevel(Math.min(rms / thr, 3), loud);
+          if(loud){ inUtt = true; voiced += dt; lastVoice = now; }
+          else if(inUtt && now - lastVoice > 900){
+            if(voiced >= 1400) onUtter();
+            inUtt = false; voiced = 0;
+          }
+        }
+      }, 40);
+    }).catch(function(){ if(mic === mine){ micStop(); onFail(); } });
+  }
+  function sayWidget(L){
+    var need = L.times || 3, got = 0;
+    var wrap = el('div', 'say');
+    wrap.appendChild(el('p', 'say-how', 'תגיד את זה בקול, ' + (need === 3 ? 'שלוש פעמים' : need + ' פעמים') + '.'));
+    var btn = el('button', 'mic'); btn.type = 'button'; btn.innerHTML = MIC_SVG; btn.setAttribute('aria-label', 'להתחיל לדבר');
+    var count = el('div', 'say-count');
+    for(var k = 0; k < need; k++) count.appendChild(el('span'));
+    var state = el('p', 'say-state', 'לחץ על המיקרופון, ואז דבר.');
+    state.setAttribute('aria-live', 'polite');
+    var note = el('p', 'say-note', 'המיקרופון רק שומע שיש קול. שום דבר לא מוקלט ולא נשלח.');
+    var manual = el('button', 'link', 'המיקרופון לא קולט? אפשר ללחוץ אחרי כל פעם'); manual.type = 'button'; manual.hidden = true;
+    var after = L.after ? el('p', 'line-small', L.after) : null;
+    if(after) after.hidden = true;
+    [btn, count, state, note, manual].forEach(function(n){ wrap.appendChild(n); });
+    if(after) wrap.appendChild(after);
+
+    function mark(){
+      got++;
+      Array.prototype.forEach.call(count.children, function(s, n){ s.className = n < got ? 'on' : ''; });
+      if(got >= need) return finish();
+      state.textContent = 'עוד ' + (need - got === 1 ? 'פעם אחת' : 'פעמיים') + '.';
+    }
+    function finish(){
+      micStop();
+      btn.disabled = true; btn.style.setProperty('--op', 0);
+      manual.hidden = true; note.hidden = true;
+      state.textContent = 'יפה. שמעת את זה בקול שלך.';
+      if(after) after.hidden = false;
+      $('#line-next').disabled = false;
+    }
+    function tapMode(why){
+      micStop();
+      btn.className = 'mic tap'; btn.textContent = 'אמרתי'; btn.removeAttribute('aria-label');
+      manual.hidden = true; note.hidden = true;
+      state.textContent = why || 'תגיד בקול, ואז לחץ ״אמרתי״.';
+    }
+    btn.addEventListener('click', function(){
+      if(btn.classList.contains('tap')){
+        mark();
+        if(got < need){ btn.disabled = true; setTimeout(function(){ btn.disabled = false; }, 2500); }
+        return;
+      }
+      if(mic) return;
+      state.textContent = 'מקשיב. תגיד את המשפט.';
+      manual.hidden = false;
+      listen(mark, function(lvl, loud){
+        btn.style.setProperty('--lvl', 1 + Math.min(lvl, 2) * .12);
+        btn.style.setProperty('--op', loud ? 1 : .35);
+      }, function(){ tapMode('אין גישה למיקרופון. תגיד בקול, ואז לחץ ״אמרתי״.'); });
+    });
+    manual.addEventListener('click', function(){ tapMode(); });
+    return wrap;
+  }
+
   var lineIdx = 0;
   function renderLine(){
+    micStop();
     var box = $('#lines'), L = LINES[lineIdx];
     box.classList.remove('go'); box.textContent = '';
-    box.appendChild(el('p', 'line-big', L.big));
+    box.appendChild(el('p', 'line-big', L.say ? '״' + L.say + '״' : L.big));
     if(L.who) box.appendChild(el('p', 'line-who', L.who));
     if(L.small) box.appendChild(el('p', 'line-small', L.small));
+    if(L.say) box.appendChild(sayWidget(L));
+    $('#line-next').disabled = !!L.say;
     void box.offsetWidth; box.classList.add('go');
     var dots = $('#dots'); dots.textContent = '';
     LINES.forEach(function(_, n){ dots.appendChild(el('span', n === lineIdx ? 'on' : '')); });
