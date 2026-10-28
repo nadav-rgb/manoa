@@ -193,6 +193,11 @@ body.nav .view:not([hidden]){animation:enter var(--t-view) var(--ease)}
   background:radial-gradient(circle at 50% 42%, #24604F 0%, var(--green) 72%);
   transform:scale(.5);transition-property:transform;transition-timing-function:cubic-bezier(.45,0,.55,1);
 }
+.orb.hold{box-shadow:0 0 0 7px rgb(203 169 100 / .55)}
+.prep{display:flex;flex-direction:column;gap:14px;margin:40px 0 0;padding-inline-start:1.5em;font-size:1.25rem;line-height:1.45}
+.prep li::marker{color:var(--gold-ink);font-weight:700}
+.sound-row{display:flex;justify-content:center;margin-block-start:30px}
+.sound-row .pill{min-width:12rem}
 .sec{position:absolute;inset:0;display:grid;place-items:center;color:var(--on-green);font-weight:700;font-size:2.25rem;font-variant-numeric:tabular-nums}
 .cue{font-weight:700;font-size:1.75rem;line-height:1.3;text-align:center;margin-block-start:18px;min-height:2.3rem}
 .cue-sub{color:var(--muted);text-align:center;min-height:1.8rem;text-wrap:balance}
@@ -431,7 +436,15 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
       <h2 class="title" id="engine-title" tabindex="-1">המנוע.</h2>
       <p class="sub" id="engine-sub"></p>
     </div>
-    <div class="breath" aria-hidden="true">
+    <ol class="prep" id="prep">
+      <li>אם אפשר, היכנס למקום שקט, בלי אנשים.</li>
+      <li>שב על ספה או על כיסא נוח, והישען קצת לאחור.</li>
+      <li id="prep-eyes"></li>
+    </ol>
+    <div class="sound-row" id="sound-row">
+      <button class="pill" type="button" id="sound" aria-pressed="true">הדרכה בצליל</button>
+    </div>
+    <div class="breath" id="breath" aria-hidden="true" hidden>
       <div class="guide"></div>
       <div class="orb" id="orb"></div>
       <p class="sec" id="sec"></p>
@@ -666,27 +679,67 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
   // המנוע: נשימה. אנחה פיזיולוגית חוזרת (cyclic sighing, Balban et al. 2023): שאיפה, השלמה קצרה, נשיפה ארוכה.
   // כל שלב מגדיר לאן העיגול מגיע (to) ובכמה שניות (sec).
   var BREATH = {
-    sub: 'קודם הגוף. שלוש נשימות.',
+    sub: 'קודם הגוף. שלוש נשימות, פחות מדקה.',
     cycles: 3,
+    // tone: [תדר התחלה, תדר סוף, עוצמת התחלה, עוצמת סוף]. בלי tone, השלב שקט.
     phases: [
-      { cue:'שאיפה', sub:'דרך האף', to:.85, sec:3 },
-      { cue:'ועוד קצת', sub:'עוד שאיפה קטנה, למלא את הריאות', to:1, sec:1 },
-      { cue:'נשיפה ארוכה', sub:'לאט, דרך הפה', to:.5, sec:7 }
+      { cue:'שאיפה', sub:'דרך האף', to:.85, sec:3, tone:[196, 262, .0001, .11] },
+      { cue:'ועוד קצת', sub:'עוד שאיפה קטנה, למלא את הריאות', to:1, sec:1, tone:[262, 330, .11, .0001] },
+      { cue:'עוצרים', sub:'האוויר נשאר בפנים', to:1, sec:6, hold:true },
+      { cue:'נשיפה ארוכה', sub:'לאט, דרך הפה', to:.5, sec:7, tone:[294, 147, .11, .0001] }
     ],
-    after: 'לא צריך להיות רגוע לגמרי. מספיק שהשיא ירד.'
+    after: 'אפשר לפתוח עיניים. לא צריך להיות רגוע לגמרי, מספיק שהשיא ירד.'
   };
   var orb = $('#orb'), sec = $('#sec'), cue = $('#cue'), cueSub = $('#cue-sub'), cueCount = $('#cue-count');
-  var timers = [];
+  var EASE = 'cubic-bezier(.45,0,.55,1)';
+  var timers = [], voices = [], actx = null;
+  var soundOn = store.get('manoa.sound', true) !== false;
   function later(fn, ms){ timers.push(setTimeout(fn, ms)); }
+
+  // צליל עדין לכל שלב, כדי שאפשר יהיה לנשום עם עיניים עצומות. נוצר במכשיר, שום דבר לא נטען מבחוץ.
+  function tone(t, dur, delay){
+    if(!soundOn || !actx || !t) return;
+    var at = actx.currentTime + (delay || 0), o = actx.createOscillator(), g = actx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(t[0], at);
+    o.frequency.exponentialRampToValueAtTime(t[1], at + dur);
+    g.gain.setValueAtTime(.0001, at);
+    g.gain.exponentialRampToValueAtTime(t[2], at + .04);
+    g.gain.exponentialRampToValueAtTime(t[3], at + dur - .04);
+    g.gain.exponentialRampToValueAtTime(.0001, at + dur);
+    o.connect(g); g.connect(actx.destination);
+    o.start(at); o.stop(at + dur + .02);
+    voices.push(o);
+  }
+  function hush(){ voices.forEach(function(o){ try{ o.stop(); }catch(e){} }); voices = []; }
+  function syncSound(){
+    $('#sound').setAttribute('aria-pressed', String(soundOn));
+    $('#sound').textContent = soundOn ? 'הדרכה בצליל: פועלת' : 'הדרכה בצליל: כבויה';
+    $('#prep-eyes').textContent = soundOn
+      ? 'לחץ על ״מתחילים לנשום״ ועצום עיניים. הצליל ינחה אותך.'
+      : 'לחץ על ״מתחילים לנשום״, ונשום יחד עם העיגול.';
+  }
+  $('#sound').addEventListener('click', function(){ soundOn = !soundOn; store.set('manoa.sound', soundOn); syncSound(); });
+  syncSound();
+
   function breathReset(){
-    timers.forEach(clearTimeout); timers = [];
-    orb.style.transitionDuration = '0s'; orb.style.transform = 'scale(.5)';
-    sec.textContent = ''; cue.textContent = ''; cueCount.textContent = '';
-    cueSub.textContent = 'נושמים יחד עם העיגול: הוא גדל כשמכניסים אוויר, וקטן לאט כשמוציאים.';
+    timers.forEach(clearTimeout); timers = []; hush();
+    orb.style.transition = 'none'; orb.style.transform = 'scale(.5)'; orb.classList.remove('hold');
+    sec.textContent = ''; cue.textContent = ''; cueSub.textContent = ''; cueCount.textContent = '';
     $('#engine-sub').textContent = BREATH.sub;
+    $('#prep').hidden = false; $('#sound-row').hidden = false; $('#breath').hidden = true;
+    cue.hidden = cueSub.hidden = cueCount.hidden = true;
     $('#breath-start').hidden = false; $('#breath-next').hidden = true; $('#breath-skip').hidden = false;
   }
   function runBreath(){
+    if(soundOn){
+      try{
+        actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+        if(actx.state === 'suspended') actx.resume();
+      }catch(e){ actx = null; }
+    }
+    $('#prep').hidden = true; $('#sound-row').hidden = true; $('#breath').hidden = false;
+    cue.hidden = cueSub.hidden = cueCount.hidden = false;
     $('#breath-start').hidden = true;
     var c = 0, i = 0;
     function step(){
@@ -696,8 +749,10 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
       cue.textContent = p.cue; cueSub.textContent = p.sub;
       cueCount.textContent = 'נשימה ' + (c + 1) + ' מתוך ' + BREATH.cycles;
       void orb.offsetWidth;
-      orb.style.transitionDuration = p.sec + 's';
+      orb.style.transition = 'transform ' + p.sec + 's ' + EASE + ', box-shadow .4s ease';
       orb.style.transform = 'scale(' + p.to + ')';
+      orb.classList.toggle('hold', !!p.hold);
+      tone(p.tone, p.sec);
       var whole = Math.round(p.sec) === p.sec;
       sec.textContent = whole ? p.sec : '';
       if(whole) for(var k = 1; k < p.sec; k++) (function(k){ later(function(){ sec.textContent = p.sec - k; }, k * 1000); })(k);
@@ -706,6 +761,8 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
     step();
   }
   function finishBreath(){
+    orb.classList.remove('hold');
+    tone([523, 523, .08, .0001], 1.4); tone([784, 784, .06, .0001], 1.6, .22);
     sec.textContent = ''; cueCount.textContent = '';
     cue.textContent = 'יפה.'; cueSub.textContent = BREATH.after;
     $('#breath-skip').hidden = true; $('#breath-next').hidden = false;
