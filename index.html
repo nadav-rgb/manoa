@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>מעוגן למנוע</title>
+<meta name="description" content="עומד מול החלטה ומרגיש פחד? השכל, הבלם, הכדור. פחות משתי דקות.">
+<meta name="theme-color" content="#FDFDFD">
+<meta name="apple-mobile-web-app-title" content="מעוגן למנוע">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="he_IL">
+<meta property="og:title" content="מעוגן למנוע">
+<meta property="og:description" content="עומד מול החלטה ומרגיש פחד? השכל, הבלם, הכדור.">
+<meta property="og:url" content="https://nadav-rgb.github.io/manoa/">
+<meta property="og:image" content="https://nadav-rgb.github.io/manoa/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<link rel="icon" type="image/png" href="icon-512.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap">
+<style>
+/* Same visual language as "עשה" (approved reference): one centered phone column on a white page,
+   back + step row on top, centered heading, right-aligned questions, one green button. */
+:root{
+  --page:#FDFDFD;
+  --green:#0D352D;
+  --green-press:#0A2A23;
+  --gold:#CBA964;
+  --gold-ink:#A8853A;
+  --pending:#B7BBBD;
+  --muted:#687574;
+  --line:#DFDFDF;
+  --card:#EEF2F0;
+  --on-green:#FAF8F6;
+  --wash:#F1E8D4;
+  --danger:#9B2C2C;
+  --font:"Rubik","Segoe UI","Arial Hebrew",Arial,sans-serif;
+  --fs-small:.875rem;
+  --fs-body:1.1875rem;
+  --fs-button:1.25rem;
+  --fs-field:1.125rem;
+  --fs-q:1.375rem;
+  --fs-slogan:1.625rem;
+  --fs-step:2.25rem;
+  --fs-title:3.9rem;
+  --r-field:8px;--r-button:7px;--r-card:12px;--r-pill:999px;
+  --ease:cubic-bezier(0.23,1,0.32,1);
+  --t-press:120ms;--t-hover:160ms;--t-view:260ms;
+  color-scheme:light;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{height:100%}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{
+  min-height:100%;margin:0;background:var(--page);color:var(--green);
+  font-family:var(--font);font-size:var(--fs-body);line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,p{margin:0}
+button{font:inherit;color:inherit}
+::selection{background:var(--wash);color:var(--green)}
+:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+[tabindex="-1"]:focus{outline:none}
+
+.app{
+  max-width:27rem;margin-inline:auto;
+  padding-left:max(22px, env(safe-area-inset-left, 0px));
+  padding-right:max(22px, env(safe-area-inset-right, 0px));
+  padding-block:18px 32px;
+}
+.view{display:flex;flex-direction:column}
+body.nav .view:not([hidden]){animation:enter var(--t-view) var(--ease)}
+@keyframes enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* top row */
+.top{display:flex;align-items:center;justify-content:space-between;min-height:44px}
+.back{
+  position:relative;width:36px;height:36px;flex:none;display:grid;place-items:center;cursor:pointer;
+  border-radius:var(--r-pill);border:1.5px solid var(--green);background:transparent;color:var(--green);
+  transition:transform var(--t-press) var(--ease), background-color var(--t-hover) var(--ease);
+}
+.back::before{content:"";position:absolute;inset:-4px}
+.back:hover{background:var(--wash)}
+.back:active{transform:scale(.94)}
+.steps{display:flex;gap:14px;font-weight:700;font-size:var(--fs-step);line-height:1;font-variant-numeric:tabular-nums}
+.steps span{color:var(--pending)}
+.steps .done{color:var(--green)}
+.steps .now{color:var(--gold)}
+
+/* heading block */
+.head{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;margin-block-start:40px}
+.title{font-weight:700;font-size:var(--fs-title);line-height:1.1;color:var(--green)}
+.title.mid{font-size:2.9rem;text-wrap:balance}
+.sub{color:var(--muted);font-size:var(--fs-body);text-wrap:balance}
+
+/* questions */
+.form{display:flex;flex-direction:column;gap:34px;margin-block-start:42px}
+.field{display:flex;flex-direction:column;gap:11px}
+.q{font-weight:700;font-size:var(--fs-q);line-height:1.35;text-wrap:balance}
+.field > label.small{font-size:var(--fs-field)}
+.hint{color:var(--muted);font-size:1rem;margin-block-start:-6px}
+.box{
+  display:flex;align-items:baseline;min-height:53px;padding:12px 16px;font-size:var(--fs-field);
+  background:var(--page);border:1px solid var(--line);border-radius:var(--r-field);
+  transition:border-color var(--t-hover) var(--ease), box-shadow var(--t-hover) var(--ease);
+}
+.box:focus-within{border-color:var(--green);box-shadow:0 0 0 3px rgb(13 53 45 / .10)}
+.box textarea{
+  flex:1;min-width:0;margin:0;padding:0;border:0;background:transparent;resize:none;outline:none;
+  font:inherit;color:var(--green);line-height:1.5;field-sizing:content;min-height:1.5em;caret-color:var(--green);
+}
+.box textarea::placeholder{color:var(--muted);opacity:1}
+.optional{color:var(--muted);font-size:.9375rem;text-align:center;margin-block-start:14px}
+
+/* pills */
+.pills{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:10px}
+.pill{
+  min-height:48px;padding-inline:12px;border-radius:var(--r-pill);cursor:pointer;
+  border:1px solid var(--line);background:transparent;color:var(--green);font-weight:500;font-size:1.0625rem;
+  transition:background-color var(--t-hover) var(--ease), color var(--t-hover) var(--ease), border-color var(--t-hover) var(--ease), transform var(--t-press) var(--ease);
+}
+.pill:hover{border-color:var(--green)}
+.pill:active{transform:scale(.96)}
+.pill[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:var(--on-green)}
+
+/* big choices (brake) */
+.choices{display:flex;flex-direction:column;gap:14px;margin-block-start:42px}
+.choice{
+  display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:100%;padding:18px 20px;cursor:pointer;
+  text-align:start;border:1.5px solid var(--line);border-radius:var(--r-card);background:var(--page);
+  transition:border-color var(--t-hover) var(--ease), background-color var(--t-hover) var(--ease), transform var(--t-press) var(--ease);
+}
+.choice b{font-size:var(--fs-q);font-weight:700;line-height:1.3}
+.choice span{color:var(--muted);font-size:1rem}
+.choice:hover{border-color:var(--green)}
+.choice:active{transform:scale(.98)}
+
+/* buttons */
+.btn{
+  display:flex;align-items:center;justify-content:center;width:100%;min-height:51px;margin-block-start:44px;
+  border:0;border-radius:var(--r-button);background:var(--green);color:var(--on-green);
+  font-weight:700;font-size:var(--fs-button);cursor:pointer;
+  transition:transform var(--t-press) var(--ease), background-color var(--t-hover) var(--ease), opacity var(--t-hover) var(--ease);
+}
+.btn:hover:not(:disabled){background:var(--green-press)}
+.btn:active:not(:disabled){transform:scale(.97)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--green);box-shadow:inset 0 0 0 1.5px var(--green)}
+.btn.ghost:hover:not(:disabled){background:var(--wash)}
+.yesno{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-block-start:28px}
+.yesno .btn{margin:0}
+.link{
+  align-self:center;margin-block-start:14px;min-height:44px;padding-inline:8px;border:0;background:none;cursor:pointer;
+  color:var(--green);font-weight:500;font-size:1.0625rem;
+  text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:6px;
+  transition:text-decoration-color var(--t-hover) var(--ease);
+}
+.link:hover{text-decoration-color:var(--green)}
+.count{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:400}
+
+/* home */
+.home .head{margin-block-start:64px;gap:18px}
+.mark{display:flex;flex-direction:column;align-items:center;font-weight:700;font-size:4.5rem;line-height:1.02}
+.mark .g{color:var(--gold)}
+.acro{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 16px;color:var(--muted)}
+.acro b{color:var(--gold-ink);font-weight:700;margin-inline-end:4px}
+.slogan{font-weight:700;font-size:var(--fs-slogan);line-height:1.3;text-align:center;text-wrap:balance;margin-block-start:44px}
+.lead{color:var(--muted);text-align:center;text-wrap:balance;margin-block-start:12px}
+.private{display:flex;align-items:flex-start;gap:8px;color:var(--muted);font-size:.9375rem;line-height:1.5}
+.private svg{flex:none;margin-block-start:3px;color:var(--green)}
+.private.center{justify-content:center;text-align:center;margin-block-start:14px;padding-inline:8px;text-wrap:balance}
+.sig{color:var(--muted);font-size:var(--fs-small);text-align:center;margin-block-start:44px}
+
+/* recap card (verdict) */
+.recap{margin-block-start:34px;padding:18px 20px;border-radius:var(--r-card);background:var(--card);display:flex;flex-direction:column;gap:10px}
+.recap-title{font-weight:700;font-size:1.0625rem;line-height:1.4;padding-block-end:10px;border-bottom:1px solid var(--line)}
+.line{font-size:1.0625rem;line-height:1.55}
+.line .k{color:var(--muted);margin-inline-end:6px}
+.verdict-lead{color:var(--muted);text-align:center;margin-block-start:36px}
+.verdict-q{font-weight:700;font-size:1.75rem;line-height:1.3;text-align:center;text-wrap:balance;margin-block-start:4px}
+
+/* endings */
+.mine{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;margin-block-start:40px}
+.mine .k{color:var(--muted);font-size:1rem}
+.mine .v{font-weight:700;font-size:var(--fs-slogan);line-height:1.35;text-wrap:balance}
+.mine .v + .k{margin-block-start:18px}
+.tagline{color:var(--gold-ink);font-weight:700;font-size:1.375rem;text-align:center;margin-block-start:36px}
+body.nav #view-done:not([hidden]) .mine,
+body.nav #view-done:not([hidden]) .tagline{animation:rise 520ms var(--ease) both}
+body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
+@keyframes rise{from{opacity:0;transform:translateY(10px);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
+
+/* list */
+.list{display:flex;flex-direction:column;margin-block-start:36px;border-top:1px solid var(--line)}
+.item{display:flex;flex-direction:column;gap:10px;padding-block:20px;border-bottom:1px solid var(--line)}
+.item-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.date{color:var(--muted);font-size:var(--fs-small)}
+.what{font-weight:700;font-size:1.1875rem;line-height:1.4}
+.tag{font-size:.8125rem;font-weight:500;padding:2px 10px;border-radius:var(--r-pill);background:var(--card);color:var(--green)}
+.tag.go{background:var(--wash)}
+.done-toggle{
+  align-self:flex-start;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding-inline:14px;cursor:pointer;
+  border-radius:var(--r-pill);border:1px solid var(--line);background:transparent;color:var(--muted);font-weight:500;font-size:1rem;
+  transition:background-color var(--t-hover) var(--ease), color var(--t-hover) var(--ease), border-color var(--t-hover) var(--ease), transform var(--t-press) var(--ease);
+}
+.done-toggle:active{transform:scale(.96)}
+.done-toggle svg{opacity:.4}
+.done-toggle[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:var(--on-green)}
+.done-toggle[aria-pressed="true"] svg{opacity:1}
+.del{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.del .link{align-self:auto;margin:0;min-height:36px;padding:0;color:var(--muted);font-size:.9375rem}
+.ask{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:.9375rem}
+.mini{min-height:36px;padding-inline:14px;border-radius:var(--r-button);cursor:pointer;font-weight:500;font-size:.9375rem;border:1px solid var(--line);background:transparent;color:var(--green)}
+.mini.danger{border-color:var(--danger);color:var(--danger)}
+.empty{margin-block-start:36px;color:var(--muted);text-align:center;text-wrap:balance}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- פתיחה -->
+  <section class="view home" id="view-home" aria-labelledby="home-title">
+    <div class="head">
+      <h1 class="mark" id="home-title" tabindex="-1"><span>מעוגן</span><span class="g">למנוע</span></h1>
+      <p class="acro"><span><b>1</b>השכל</span><span><b>2</b>הבלם</span><span><b>3</b>הכדור</span></p>
+    </div>
+    <p class="slogan">הפחד לא ינהל אותי.</p>
+    <p class="lead">עומד מול החלטה ומרגיש פחד? שלושה שלבים, פחות משתי דקות.</p>
+    <button class="btn" type="button" data-go="what">מתחילים</button>
+    <p class="private center">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+      <span>מה שתכתוב כאן לא נשלח לשום מקום. הוא נשמר רק בטלפון שלך, ואף אחד לא רואה אותו, גם לא נדב.</span>
+    </p>
+    <button class="link" type="button" data-go="list">ההחלטות שלי <span class="count" id="count"></span></button>
+    <p class="sig">מעוגן למנוע · נדב לבון</p>
+  </section>
+
+  <!-- ההחלטה -->
+  <section class="view" id="view-what" aria-labelledby="what-title" hidden>
+    <div class="top">
+      <button class="back" type="button" data-go="home" aria-label="חזרה">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+      <p class="steps" aria-hidden="true"><span>1</span><span>2</span><span>3</span></p>
+    </div>
+    <div class="head">
+      <h2 class="title" id="what-title" tabindex="-1">ההחלטה.</h2>
+      <p class="sub">שורה אחת. בלי הסברים.</p>
+    </div>
+    <div class="form">
+      <div class="field">
+        <label class="q" for="what">על מה אתה מתלבט?</label>
+        <div class="box"><textarea id="what" rows="1" dir="rtl" placeholder="לבקש העלאה"></textarea></div>
+        <p class="private">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+          <span>נשאר רק בטלפון שלך. אף אחד לא רואה את זה.</span>
+        </p>
+      </div>
+    </div>
+    <button class="btn" type="button" id="to-m1" data-go="m1" disabled>המשך</button>
+  </section>
+
+  <!-- השכל 1: המאזניים -->
+  <section class="view" id="view-m1" aria-labelledby="m1-title" hidden>
+    <div class="top">
+      <button class="back" type="button" data-go="what" aria-label="חזרה">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+      <p class="steps" aria-label="שלב 1 מתוך 3"><span class="now">1</span><span>2</span><span>3</span></p>
+    </div>
+    <div class="head">
+      <h2 class="title" id="m1-title" tabindex="-1">השכל.</h2>
+      <p class="sub">בלי רגש. שאלה 1 מתוך 3.</p>
+    </div>
+    <div class="form">
+      <div class="field">
+        <label class="q" for="best">מה הכי טוב שיכול לצאת מזה?</label>
+        <div class="box"><textarea id="best" rows="1" dir="rtl" placeholder="יעריכו אותי יותר, ואקבל העלאה"></textarea></div>
+      </div>
+      <div class="field">
+        <label class="q" for="worst">ומה הכי גרוע?</label>
+        <p class="hint">ואם זה יקרה, תסתדר?</p>
+        <div class="box"><textarea id="worst" rows="1" dir="rtl" placeholder="יגידו לי לא, ויהיה לא נעים"></textarea></div>
+      </div>
+    </div>
+    <button class="btn" type="button" data-go="m2">הבא</button>
+    <p class="optional">אפשר גם רק לחשוב, בלי לכתוב.</p>
+  </section>
+
+  <!-- השכל 2: החבר -->
+  <section class="view" id="view-m2" aria-labelledby="m2-title" hidden>
+    <div class="top">
+      <button class="back" type="button" data-go="m1" aria-label="חזרה">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+      <p class="steps" aria-label="שלב 1 מתוך 3"><span class="now">1</span><span>2</span><span>3</span></p>
+    </div>
+    <div class="head">
+      <h2 class="title" id="m2-title" tabindex="-1">השכל.</h2>
+      <p class="sub">בלי רגש. שאלה 2 מתוך 3.</p>
+    </div>
+    <div class="form">
+      <div class="field">
+        <label class="q" for="friend">אם חבר טוב היה מתלבט בדיוק בזה, מה היית אומר לו?</label>
+        <div class="box"><textarea id="friend" rows="1" dir="rtl" placeholder="מה שהיית אומר לו, במשפט אחד"></textarea></div>
+      </div>
+    </div>
+    <button class="btn" type="button" data-go="m3">הבא</button>
+    <p class="optional">אפשר גם רק לחשוב, בלי לכתוב.</p>
+  </section>
+
+  <!-- השכל 3: בעוד שנה -->
+  <section class="view" id="view-m3" aria-labelledby="m3-title" hidden>
+    <div class="top">
+      <button class="back" type="button" data-go="m2" aria-label="חזרה">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+      <p class="steps" aria-label="שלב 1 מתוך 3"><span class="now">1</span><span>2</span><span>3</span></p>
+    </div>
+    <div class="head">
+      <h2 class="title" id="m3-title" tabindex="-1">השכל.</h2>
+      <p class="sub">בלי רגש. שאלה 3 מתוך 3.</p>
+    </div>
+    <div class="form">
+      <div class="field" role="group" aria-labelledby="regret-q">
+        <p class="q" id="regret-q">בעוד שנה, על מה תצטער יותר?</p>
+        <div class="pills" data-pick="regret">
+          <button class="pill" type="button" data-val="did" aria-pressed="false">שעשיתי</button>
+          <button class="pill" type="button" data-val="didnt" aria-pressed="false">שלא עשיתי</button>
+        </div>
+      </div>
+    </div>
+    <button class="btn" type="button" data-go="verdict">הבא</button>
+  </section>
+
+  <!-- ההכרעה -->
+  <section class="view" id="view-verdict" aria-labelledby="verdict-title" hidden>
+    <div class="top">
+      <button class="back" type="button" data-go="m3" aria-label="חזרה">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+      <p class="steps" aria-label="שלב 1 מתוך 3"><span class="now">1</span><span>2</span><span>3</span></p>
+    </div>
+    <div class="head">
+      <h2 class="title" id="verdict-title" tabindex="-1">ההכרעה.</h2>
+      <p class="sub" id="verdict-sub">קרא את מה שכתבת. עכשיו מכריעים.</p>
+    </div>
+    <div class="recap" id="recap"></div>
+    <p class="verdict-lead">קודם כול, בלי רגש:</p>
+    <p class="verdict-q">זה הדבר הנכון לעשות?</p>
+    <div class="yesno">
+      <button class="btn" type="button" data-go="brake">כן</button>
+      <button class="btn ghost" type="button" id="verdict-no">לא</button>
+    </div>
+  </section>
+
+  <!-- לא -->
+  <section class="view" id="view-no" aria-labelledby="no-title" hidden>
+    <div class="head" style="margin-block-start:84px">
+      <h2 class="title mid" id="no-title" tabindex="-1">זה לא הכדור שלך.</h2>
+      <p class="sub">מותר לוותר עליו. כשהשכל אומר לא, זו לא בריחה. זו החלטה.</p>
+    </div>
+    <div class="mine"><p class="k">ההחלטה</p><p class="v" id="no-what"></p></div>
+    <button class="btn" type="button" data-go="home">חזרה להתחלה</button>
+    <button class="link" type="button" data-go="list">ההחלטות שלי</button>
+  </section>
+
+  <!-- הבלם -->
+  <section class="view" id="view-brake" aria-labelledby="brake-title" hidden>
+    <div class="top">
+      <button class="back" type="button" data-go="verdict" aria-label="חזרה">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+      <p class="steps" aria-label="שלב 2 מתוך 3"><span class="done">1</span><span class="now">2</span><span>3</span></p>
+    </div>
+    <div class="head">
+      <h2 class="title" id="brake-title" tabindex="-1">הבלם.</h2>
+      <p class="sub">זה הדבר הנכון. אז מה בדיוק עוצר אותך?</p>
+    </div>
+    <div class="choices">
+      <button class="choice" type="button" id="brake-real"><b>סיבה אמיתית</b><span>משפחה, בריאות, ערכים, פרנסה</span></button>
+      <button class="choice" type="button" data-go="ball"><b>רק הפחד</b><span>פדיחה, דחייה, ״מה יחשבו״</span></button>
+    </div>
+  </section>
+
+  <!-- סיבה אמיתית -->
+  <section class="view" id="view-real" aria-labelledby="real-title" hidden>
+    <div class="head" style="margin-block-start:84px">
+      <h2 class="title mid" id="real-title" tabindex="-1">זו לא פחדנות.</h2>
+      <p class="sub">סיבה אמיתית היא סיבה טובה לעצור. רק תוודא שזו באמת סיבה, ולא הפחד בתחפושת.</p>
+    </div>
+    <div class="mine"><p class="k">ההחלטה</p><p class="v" id="real-what"></p></div>
+    <button class="btn" type="button" data-go="home">חזרה להתחלה</button>
+    <button class="link" type="button" data-go="list">ההחלטות שלי</button>
+  </section>
+
+  <!-- הכדור -->
+  <section class="view" id="view-ball" aria-labelledby="ball-title" hidden>
+    <div class="top">
+      <button class="back" type="button" data-go="brake" aria-label="חזרה">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+      <p class="steps" aria-label="שלב 3 מתוך 3"><span class="done">1</span><span class="done">2</span><span class="now">3</span></p>
+    </div>
+    <div class="head">
+      <h2 class="title" id="ball-title" tabindex="-1">הכדור.</h2>
+      <p class="sub">אם זה רק הפחד: הולכים לשם. ודווקא מהר.</p>
+    </div>
+    <div class="form">
+      <div class="field">
+        <label class="q" for="step">מה הצעד הראשון?</label>
+        <div class="box"><textarea id="step" rows="1" dir="rtl" placeholder="לבקש פגישה עם המנהל"></textarea></div>
+      </div>
+      <div class="field" role="group" aria-labelledby="when-q">
+        <p class="q" id="when-q">מתי?</p>
+        <div class="pills" data-pick="when">
+          <button class="pill" type="button" data-val="היום" aria-pressed="false">היום</button>
+          <button class="pill" type="button" data-val="מחר" aria-pressed="false">מחר</button>
+          <button class="pill" type="button" data-val="השבוע" aria-pressed="false">השבוע</button>
+        </div>
+      </div>
+    </div>
+    <button class="btn" type="button" id="commit" disabled>יוצא לדרך</button>
+  </section>
+
+  <!-- יוצאים לדרך -->
+  <section class="view" id="view-done" aria-labelledby="done-title" hidden>
+    <div class="head" style="margin-block-start:84px">
+      <h2 class="title mid" id="done-title" tabindex="-1">יוצאים לדרך.</h2>
+    </div>
+    <div class="mine">
+      <p class="k">החלטת</p>
+      <p class="v" id="done-what"></p>
+      <p class="k">הצעד הראשון</p>
+      <p class="v" id="done-step"></p>
+    </div>
+    <p class="tagline">#הפחד_לא_ינהל_אותי</p>
+    <button class="btn" type="button" data-go="list">ההחלטות שלי</button>
+    <button class="link" type="button" data-go="home">חזרה להתחלה</button>
+  </section>
+
+  <!-- ההחלטות שלי -->
+  <section class="view" id="view-list" aria-labelledby="list-title" hidden>
+    <div class="top">
+      <button class="back" type="button" data-go="home" aria-label="חזרה">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+    <div class="head">
+      <h2 class="title mid" id="list-title" tabindex="-1">ההחלטות שלי</h2>
+      <p class="sub">הכול נשמר רק בטלפון הזה.</p>
+    </div>
+    <div class="list" id="list"></div>
+    <p class="empty" id="empty" hidden>עוד אין כאן החלטות. בפעם הבאה שתעמוד מול החלטה מפחידה, תעבור את שלושת השלבים, וההחלטה תישמר כאן.</p>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  var KEY_LIST = 'manoa.list.v1', KEY_DRAFT = 'manoa.draft.v1';
+  var store = {
+    get: function(k, f){ try{ var v = localStorage.getItem(k); return v ? JSON.parse(v) : f; }catch(e){ return f; } },
+    set: function(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+  };
+  function emptyDraft(){ return { what:'', best:'', worst:'', friend:'', regret:'', step:'', when:'' }; }
+
+  var list = store.get(KEY_LIST, []);
+  if(!Array.isArray(list)) list = [];
+  var draft = Object.assign(emptyDraft(), store.get(KEY_DRAFT, {}) || {});
+
+  var $ = function(s){ return document.querySelector(s); };
+  var VIEWS = ['home','what','m1','m2','m3','verdict','no','brake','real','ball','done','list'];
+  var FIELDS = ['what','best','worst','friend','step'];
+  var REGRET = { did:'שעשיתי', didnt:'שלא עשיתי' };
+
+  function show(name){
+    VIEWS.forEach(function(v){ $('#view-' + v).hidden = (v !== name); });
+    if(name === 'verdict') renderRecap();
+    if(name === 'list') renderList();
+    if(name === 'home') renderCount();
+    window.scrollTo(0, 0);
+    var h = $('#view-' + name + ' [tabindex="-1"]');
+    if(h && document.body.classList.contains('nav')) h.focus({ preventScroll:true });
+  }
+  function go(name){ document.body.classList.add('nav'); show(name); }
+
+  document.addEventListener('click', function(e){
+    var t = e.target.closest('[data-go]');
+    if(!t || t.disabled) return;
+    go(t.getAttribute('data-go'));
+  });
+
+  function saveDraft(){ store.set(KEY_DRAFT, draft); }
+  function validate(){
+    $('#to-m1').disabled = !draft.what.trim();
+    $('#commit').disabled = !(draft.step.trim() && draft.when);
+  }
+  FIELDS.forEach(function(id){
+    var el = $('#' + id);
+    el.value = draft[id] || '';
+    el.addEventListener('input', function(){ draft[id] = el.value; saveDraft(); validate(); });
+  });
+
+  // pill groups: one choice per group, tap again to clear
+  function syncPills(){
+    document.querySelectorAll('[data-pick]').forEach(function(g){
+      var key = g.getAttribute('data-pick');
+      g.querySelectorAll('.pill').forEach(function(p){
+        p.setAttribute('aria-pressed', String(p.getAttribute('data-val') === draft[key]));
+      });
+    });
+  }
+  document.querySelectorAll('[data-pick]').forEach(function(g){
+    var key = g.getAttribute('data-pick');
+    g.addEventListener('click', function(e){
+      var p = e.target.closest('.pill');
+      if(!p) return;
+      var v = p.getAttribute('data-val');
+      draft[key] = draft[key] === v ? '' : v;
+      saveDraft(); syncPills(); validate();
+    });
+  });
+  syncPills();
+  validate();
+
+  function el(tag, cls, text){
+    var n = document.createElement(tag);
+    if(cls) n.className = cls;
+    if(text != null) n.textContent = text;
+    return n;
+  }
+  function line(k, v){
+    var p = el('p', 'line');
+    p.appendChild(el('span', 'k', k));
+    p.appendChild(document.createTextNode(v));
+    return p;
+  }
+
+  function renderRecap(){
+    var box = $('#recap');
+    box.textContent = '';
+    var rows = [];
+    if(draft.best.trim()) rows.push(['הכי טוב:', draft.best.trim()]);
+    if(draft.worst.trim()) rows.push(['הכי גרוע:', draft.worst.trim()]);
+    if(draft.friend.trim()) rows.push(['לחבר היית אומר:', draft.friend.trim()]);
+    if(draft.regret) rows.push(['בעוד שנה תצטער יותר:', REGRET[draft.regret]]);
+    box.hidden = rows.length === 0;
+    $('#verdict-sub').textContent = rows.length ? 'קרא את מה שכתבת. עכשיו מכריעים.' : 'עכשיו מכריעים.';
+    if(!rows.length) return;
+    box.appendChild(el('p', 'recap-title', draft.what.trim()));
+    rows.forEach(function(r){ box.appendChild(line(r[0], r[1])); });
+  }
+
+  function finish(kind){
+    var d = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      ts: Date.now(), kind: kind,
+      what: draft.what.trim(), best: draft.best.trim(), worst: draft.worst.trim(),
+      friend: draft.friend.trim(), regret: draft.regret,
+      step: kind === 'go' ? draft.step.trim() : '', when: kind === 'go' ? draft.when : '',
+      done: false
+    };
+    list.unshift(d);
+    store.set(KEY_LIST, list);
+    draft = emptyDraft(); saveDraft();
+    FIELDS.forEach(function(id){ $('#' + id).value = ''; });
+    syncPills(); validate();
+    return d;
+  }
+
+  $('#verdict-no').addEventListener('click', function(){
+    var d = finish('no');
+    $('#no-what').textContent = d.what;
+    go('no');
+  });
+  $('#brake-real').addEventListener('click', function(){
+    var d = finish('real');
+    $('#real-what').textContent = d.what;
+    go('real');
+  });
+  $('#commit').addEventListener('click', function(){
+    var d = finish('go');
+    $('#done-what').textContent = d.what;
+    $('#done-step').textContent = d.step + ', ' + d.when;
+    go('done');
+  });
+
+  function gematria(n){
+    if(n === 15) return 'ט״ו';
+    if(n === 16) return 'ט״ז';
+    var ones = ['','א','ב','ג','ד','ה','ו','ז','ח','ט'], tens = ['','י','כ','ל'];
+    var s = tens[Math.floor(n / 10)] + ones[n % 10];
+    return s.length === 1 ? s + '׳' : s.slice(0, -1) + '״' + s.slice(-1);
+  }
+  function fmtDate(ts){
+    try{
+      return new Intl.DateTimeFormat('he-IL-u-ca-hebrew', { day:'numeric', month:'long' }).formatToParts(new Date(ts)).map(function(p){
+        if(p.type !== 'day') return p.value;
+        var n = parseInt(p.value, 10);
+        return isNaN(n) ? p.value : gematria(n);
+      }).join('');
+    }catch(e){ return new Date(ts).toLocaleDateString('he-IL'); }
+  }
+  var TAGS = { go:'הולך על זה', no:'ויתרתי', real:'סיבה אמיתית' };
+  var CHECK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  function save(){ store.set(KEY_LIST, list); }
+  function renderCount(){ $('#count').textContent = list.length ? '(' + list.length + ')' : ''; }
+
+  function renderList(){
+    var box = $('#list');
+    box.textContent = '';
+    box.hidden = list.length === 0;
+    $('#empty').hidden = list.length > 0;
+    list.forEach(function(d){
+      var item = el('article', 'item');
+      var top = el('div', 'item-top');
+      var t = el('time', 'date', fmtDate(d.ts));
+      t.setAttribute('datetime', new Date(d.ts).toISOString());
+      top.appendChild(t);
+      top.appendChild(el('span', d.kind === 'go' ? 'tag go' : 'tag', TAGS[d.kind] || ''));
+      item.appendChild(top);
+      item.appendChild(el('p', 'what', d.what));
+      if(d.kind === 'go'){
+        item.appendChild(line('הצעד הראשון:', d.step + ', ' + d.when));
+        var tg = el('button', 'done-toggle');
+        tg.type = 'button';
+        tg.innerHTML = CHECK;
+        tg.appendChild(document.createTextNode('עשיתי'));
+        tg.setAttribute('aria-pressed', String(!!d.done));
+        tg.addEventListener('click', function(){ d.done = !d.done; tg.setAttribute('aria-pressed', String(d.done)); save(); });
+        item.appendChild(tg);
+      }
+      var del = el('div', 'del');
+      var rm = el('button', 'link', 'מחיקה'); rm.type = 'button';
+      var ask = el('div', 'ask'); ask.hidden = true;
+      ask.appendChild(el('span', null, 'למחוק את ההחלטה?'));
+      var yes = el('button', 'mini danger', 'כן, למחוק'); yes.type = 'button';
+      var no = el('button', 'mini', 'ביטול'); no.type = 'button';
+      ask.appendChild(yes); ask.appendChild(no);
+      rm.addEventListener('click', function(){ rm.hidden = true; ask.hidden = false; no.focus(); });
+      no.addEventListener('click', function(){ ask.hidden = true; rm.hidden = false; rm.focus(); });
+      yes.addEventListener('click', function(){
+        list = list.filter(function(x){ return x.id !== d.id; });
+        save(); renderList();
+      });
+      del.appendChild(rm); del.appendChild(ask);
+      item.appendChild(del);
+      box.appendChild(item);
+    });
+  }
+
+  show('home');
+})();
+</script>
+</body>
+</html>

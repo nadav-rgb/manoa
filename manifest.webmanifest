@@ -1,0 +1,16 @@
+{
+  "name": "מעוגן למנוע",
+  "short_name": "מעוגן למנוע",
+  "description": "עומד מול החלטה ומרגיש פחד? השכל, הבלם, הכדור.",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FDFDFD",
+  "theme_color": "#FDFDFD",
+  "icons": [
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png"}
+  ]
+}
