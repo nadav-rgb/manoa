@@ -227,14 +227,51 @@ body.nav .view:not([hidden]){animation:enter var(--t-view) var(--ease)}
 .say-count span{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--gold-ink);transition:background-color var(--t-hover) var(--ease)}
 .say-count .on{background:var(--gold);border-color:var(--gold)}
 .say-state{color:var(--muted);min-height:1.6rem}
-.say-ok{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--gold-ink)}
-.say-ok svg{width:76px;height:76px;color:var(--gold)}
-.say-ok svg path{stroke-dasharray:30;stroke-dashoffset:30}
-.say-ok.go svg{animation:pop 420ms var(--ease) both}
-.say-ok.go svg path{animation:draw 380ms 120ms var(--ease) forwards}
+.say-ok{display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--gold-ink)}
 .say-ok p{font-weight:700;font-size:1.375rem}
-@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}
-@keyframes draw{to{stroke-dashoffset:0}}
+/* החותם הזהוב, מועתק מ-GoldSeal של מקושרים (גודל hero) */
+.seal{
+  --c-gold:#d9a52a;--c-light:#f3cf6b;--c-dark:#a06a19;
+  position:relative;display:inline-grid;place-items:center;width:96px;height:96px;flex:none;
+}
+.seal-disc{
+  position:relative;display:grid;place-items:center;width:100%;height:100%;border-radius:50%;
+  background:radial-gradient(circle at 32% 24%, #fff4d2 0%, #f6d77a 26%, #dcaa30 60%, #a06a19 100%);
+  box-shadow:0 10px 24px -8px rgba(122,82,16,.55), 0 0 0 1px rgba(103,66,10,.16), inset 0 -3px 6px rgba(103,66,10,.28);
+  animation:seal-jump 760ms cubic-bezier(.2,1.4,.36,1) both;
+}
+.seal-ring{position:absolute;inset:7px;border-radius:50%;border:1.5px solid rgba(255,248,224,.8);pointer-events:none}
+.seal-check{
+  position:relative;z-index:1;width:50%;height:50%;color:#4a3108;
+  filter:drop-shadow(0 1px 0 rgba(255,244,210,.7));
+  animation:seal-check 520ms 240ms cubic-bezier(.2,1.3,.36,1) both;
+}
+.seal-burst{
+  position:absolute;inset:0;border:2px solid rgba(220,170,48,.7);border-radius:50%;opacity:0;pointer-events:none;
+  animation:seal-burst 900ms 180ms cubic-bezier(.16,1,.3,1) both;
+}
+.confetti{position:absolute;inset:0;z-index:2;font-size:100px;pointer-events:none}
+.piece{
+  position:absolute;top:50%;left:50%;width:5px;height:9px;border-radius:1px;background:var(--c-gold);opacity:0;
+  animation:seal-confetti 1440ms var(--piece-delay) cubic-bezier(.16,1,.3,1) both;
+}
+.piece:nth-child(3n){width:6px;height:6px;border-radius:50%;background:var(--c-light)}
+.piece:nth-child(3n + 1){background:var(--c-dark)}
+@keyframes seal-confetti{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}
+  12%{opacity:1}
+  64%{opacity:.95}
+  100%{opacity:0;transform:translate(calc(-50% + var(--piece-x)), calc(-50% + var(--piece-y))) rotate(var(--piece-turn)) scale(.65)}
+}
+@keyframes seal-jump{
+  0%{opacity:0;transform:scale(.2) rotate(-28deg)}
+  55%{opacity:1;transform:scale(1.16) rotate(6deg)}
+  78%{transform:scale(.95) rotate(-2deg)}
+  100%{opacity:1;transform:scale(1) rotate(0)}
+}
+@keyframes seal-check{from{opacity:0;transform:scale(.4) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes seal-burst{0%{opacity:.85;transform:scale(.9)}100%{opacity:0;transform:scale(1.75)}}
+@media (prefers-reduced-motion: reduce){ .seal-burst, .confetti{display:none} }
 .say-text span{transition:color 140ms linear}
 .say-text .lit{color:var(--gold-ink)}
 .say-note{color:var(--muted);font-size:.875rem;text-wrap:balance}
@@ -807,11 +844,12 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
   // (Gilovich & Medvec 1995), לפגוש את המכשול (WOOP, Oettingen), ורק אז הצעד הראשון ומתי (Gollwitzer 2006).
   var LINES = [
     { big:'מה שנשאר בגוף עכשיו, זה לא רק פחד.', small:'אותו לב דופק גם בהתרגשות. תגיד לעצמך בשקט: אני מתרגש.' },
-    { say:'האושר הכי גדול שלי, ממתין לי מטר אחרי הפחד הכי גדול שלי.', who:'בהשראת וויל סמית׳', times:3 },
+    // syl: מספר ההברות בכל מילה, כדי שמילה ארוכה תיצבע לאט יותר ממילה קצרה
+    { say:'האושר הכי גדול שלי, ממתין לי מטר אחרי הפחד הכי גדול שלי.', syl:[3,2,2,2,3,1,2,3,3,2,2,2], who:'בהשראת וויל סמית׳', times:3 },
     { big:'עכשיו עצום עיניים, ודמיין.', small:'דמיין בצורה חווייתית ואמיתית: הלכת בפועל ועשית את המעשה, והצלחת. הכול עבר בהצלחה רבה. איך אתה עומד? איפה בגוף אתה מרגיש את זה? תישאר שם שלוש נשימות, ואז פתח עיניים.' },
     { big:'מה יספרו עליך הנכדים שלך?', small:'שפחדת ולא עשית, ונשארת בינוני? או שנכנסת בכל הכוח, נגד כל הסיכויים, והצלחת?' },
     { big:'תדמיין: עברה שנה. מישהו אחר עומד במקום שהיה צריך להיות שלך.', small:'איך זה מרגיש בגוף? אתה באמת רוצה להיות שם?' },
-    { say:'אני יכול לנצח 99% מהאנשים, כשאני שולט בבושה שבדחייה, בשעמום שבחזרתיות ובכאב שבביקורת.', who:'בהשראת אלכס הורמוזי', times:3, after:'הבושה שאתה מרגיש עכשיו היא בדיוק הדבר שרוב האנשים לא עוברים. אתה כבר באמצע.' }
+    { say:'אני יכול לנצח 99% מהאנשים, כשאני שולט בבושה שבדחייה, בשעמום שבחזרתיות ובכאב שבביקורת.', syl:[2,2,4,7,5,4,2,3,5,4,7,4,5], who:'בהשראת אלכס הורמוזי', times:3, after:'הבושה שאתה מרגיש עכשיו היא בדיוק הדבר שרוב האנשים לא עוברים. אתה כבר באמצע.' }
   ];
   // אמירה בקול: המיקרופון רק מודד עוצמת קול בתוך הטלפון, כדי לזהות שנאמר משפט.
   // לא מזהים מילים, כי זיהוי מילים בדפדפן שולח את הקול לשרתים של גוגל או אפל. שום דבר לא מוקלט ולא נשלח.
@@ -824,8 +862,8 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
     try{ mic.ctx.close(); }catch(e){}
     mic = null;
   }
-  // קורא ל-onUtter בכל פעם שנאמר משפט: לפחות 1.4 שניות של קול, ואחריהן שקט של כמעט שנייה.
-  function listen(onUtter, onLevel, onFail){
+  // מעביר כל 20 מילישניות את עוצמת הקול במיקרופון, בדציבלים.
+  function listen(onFrame, onFail){
     var Ctx = window.AudioContext || window.webkitAudioContext;
     if(!Ctx || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return onFail();
     var ctx = new Ctx();
@@ -838,30 +876,90 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
       var an = ctx.createAnalyser(); an.fftSize = 1024;
       ctx.createMediaStreamSource(stream).connect(an);
       var buf = new Uint8Array(an.fftSize);
-      var t0 = performance.now(), last = t0, floor = 0, n = 0, voiced = 0, lastVoice = 0, inUtt = false;
       mic.iv = setInterval(function(){
         if(mic !== mine) return;
-        var now = performance.now();
         an.getByteTimeDomainData(buf);
         var s = 0;
         for(var i = 0; i < buf.length; i++){ var v = (buf[i] - 128) / 128; s += v * v; }
-        var rms = Math.sqrt(s / buf.length), dt = now - last; last = now;
-        if(now - t0 < 400){ floor += rms; n++; }
-        else {
-          var thr = Math.min(Math.max(floor / Math.max(n, 1) * 2.5, .02), .06);
-          var loud = rms > thr;
-          if(loud){ inUtt = true; voiced += dt; lastVoice = now; }
-          else if(inUtt && now - lastVoice > 900){
-            if(voiced >= 1400) onUtter();
-            inUtt = false; voiced = 0;
-          }
-          onLevel(Math.min(rms / thr, 3), loud, voiced);
-        }
-      }, 40);
+        onFrame(performance.now(), 20 * Math.log10(Math.sqrt(s / buf.length) + 1e-5));
+      }, 20);
     }).catch(function(){ if(mic === mine){ micStop(); onFail(); } });
   }
-  var CHECK_BIG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
-  var MS_PER_WORD = 240; // בערך כמה זמן קול יש בכל מילה, כדי להדליק את המילים בקצב הדיבור
+
+  // מסנכרן את צביעת המילים עם הדיבור, בלי לזהות מילים:
+  // מודד כמה זמן מדברים (הפסקה קצרה בתוך מילה נספרת, הפסקה ארוכה לא), ממיר את הזמן להברות לפי קצב הדובר,
+  // ומדליק כל מילה לפי מספר ההברות שבה. בפסיק שעוצרים בו הוא קופץ לפסיק ולומד מחדש את הקצב,
+  // ואחרי כל אמירה שלמה הקצב שנלמד עובר לאמירה הבאה ולמשפט הבא.
+  // הערכים כוילו מול הקראה בעברית עם זמני מילים ידועים, בשלוש מהירויות דיבור ובשתי עוצמות.
+  var SYNC = { msPerSyl:170, hang:120, gateDb:9, ahead:.9, snap:.45, release:2, finish:.8, endMs:900, minShare:.4 };
+  var learnedMsPerSyl = 0;
+  function tracker(words, syl, onLevel, onProgress, onUtter){
+    var cum = [0];
+    syl.forEach(function(n){ cum.push(cum[cum.length - 1] + n); });
+    var total = cum[cum.length - 1], marks = [];
+    words.forEach(function(w, i){ if(/,$/.test(w) && i < words.length - 1) marks.push(cum[i + 1]); });
+    var t0 = 0, last = 0, floorSum = 0, floorN = 0, s;
+    function reset(){ s = { talk:0, pending:0, lastAbove:-1e9, inUtt:false, paused:false, baseTalk:0, baseSyl:0, mps:learnedMsPerSyl || SYNC.msPerSyl }; }
+    reset();
+    return function(now, db){
+      if(!t0){ t0 = now; last = now; }
+      var dt = now - last; last = now;
+      if(now - t0 < 400){ floorSum += db; floorN++; return; }
+      var gate = Math.max(floorSum / Math.max(floorN, 1), -60) + SYNC.gateDb;
+      onLevel(Math.max(0, Math.min((db - gate) / 12, 2)), db > gate);
+      if(db > gate){
+        if(s.paused && s.inUtt){
+          var at = s.baseSyl + (s.talk - s.baseTalk) / s.mps, best = -1;
+          marks.forEach(function(m){
+            if(m > s.baseSyl && Math.abs(at - m) <= SYNC.snap * (m - s.baseSyl) && (best < 0 || Math.abs(at - m) < Math.abs(at - best))) best = m;
+          });
+          if(best > 0){
+            // לפני פסיק מאריכים את ההברה האחרונה, ולכן הקצב שנמדד עד הפסיק איטי מהקצב האמיתי בערך ב-15%.
+            // אם כבר יש קצב שנלמד מאמירה שלמה, הוא מדויק יותר, וכאן רק קופצים לפסיק.
+            if(!learnedMsPerSyl) s.mps = Math.max(100, Math.min(330, (s.talk - s.baseTalk) / (best - s.baseSyl) * .85));
+            s.baseTalk = s.talk; s.baseSyl = best;
+          }
+        }
+        s.inUtt = true; s.lastAbove = now; s.paused = false;
+        s.talk += s.pending + dt; s.pending = 0;
+      } else if(s.inUtt){
+        var gap = now - s.lastAbove;
+        if(gap <= SYNC.hang) s.pending += dt;
+        else {
+          s.paused = true; s.pending = 0;
+          if(gap > SYNC.endMs){
+            var said = s.talk >= Math.max(1400, SYNC.minShare * total * SYNC.msPerSyl);
+            if(said) learnedMsPerSyl = Math.max(100, Math.min(330, s.talk / total));
+            reset();
+            if(said) onUtter(); else onProgress(0);
+            return;
+          }
+        }
+      }
+      if(!s.inUtt) return;
+      var raw = s.baseSyl + (s.talk - s.baseTalk) / s.mps, prog = raw + SYNC.ahead;
+      for(var j = 0; j < marks.length; j++){
+        if(marks[j] > s.baseSyl){ if(raw < marks[j] + SYNC.release) prog = Math.min(prog, marks[j]); break; }
+      }
+      if(s.paused && raw >= total * SYNC.finish) prog = total;
+      var k = 0;
+      while(k < syl.length && prog > cum[k]) k++;
+      onProgress(k);
+    };
+  }
+
+  // החותם הזהוב ממקושרים (GoldSeal, בגודל hero): עיגול זהב עם V שקופץ פנימה וטבעת שמתרחבת. קונפטי רק בפעם האחרונה.
+  var SEAL_CHECK = '<svg class="seal-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+  function seal(confetti){
+    var pieces = '';
+    if(confetti) for(var i = 0; i < 14; i++){
+      var a = i / 14 * Math.PI * 2, r = i % 2 ? 1.1 : .85;
+      pieces += '<i class="piece" style="--piece-x:' + (Math.cos(a) * r).toFixed(3) + 'em;--piece-y:' + (Math.sin(a) * r - .2).toFixed(3) +
+        'em;--piece-turn:' + (i % 2 ? 240 : -210) + 'deg;--piece-delay:' + (i % 3 * 30) + 'ms"></i>';
+    }
+    return '<span class="seal" aria-hidden="true">' + (pieces ? '<span class="confetti">' + pieces + '</span>' : '') +
+      '<span class="seal-burst"></span><span class="seal-disc"><span class="seal-ring"></span>' + SEAL_CHECK + '</span></span>';
+  }
   function sayWidget(L, textEl){
     var need = L.times || 3, got = 0;
     var wrap = el('div', 'say');
@@ -873,8 +971,6 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
     state.setAttribute('aria-live', 'polite');
     var note = el('p', 'say-note', 'המיקרופון רק שומע שיש קול. שום דבר לא מוקלט ולא נשלח.');
     var ok = el('div', 'say-ok'); ok.hidden = true; ok.setAttribute('aria-live', 'polite');
-    ok.innerHTML = CHECK_BIG;
-    var okText = el('p'); ok.appendChild(okText);
     var manual = el('button', 'link', 'המיקרופון לא קולט? אפשר ללחוץ אחרי כל פעם'); manual.type = 'button'; manual.hidden = true;
     var after = L.after ? el('p', 'line-small', L.after) : null;
     if(after) after.hidden = true;
@@ -884,10 +980,11 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
     // המילים במשפט נדלקות בזהב בזמן שמדברים, ומתאפסות לפני האמירה הבאה
     var words = textEl ? textEl.querySelectorAll('span') : [], holding = false, okTimer = 0;
     function light(k){ Array.prototype.forEach.call(words, function(w, i){ w.classList.toggle('lit', i < k); }); }
-    function cheer(text){
+    function cheer(text, confetti){
       clearTimeout(okTimer);
-      okText.textContent = text; ok.hidden = false; state.hidden = true;
-      ok.classList.remove('go'); void ok.offsetWidth; ok.classList.add('go');
+      ok.innerHTML = seal(confetti);
+      ok.appendChild(el('p', null, text));
+      ok.hidden = false; state.hidden = true;
     }
     function mark(){
       got++;
@@ -902,7 +999,7 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
       micStop();
       btn.disabled = true; btn.style.setProperty('--op', 0);
       manual.hidden = true; note.hidden = true;
-      cheer('מעולה! שמעת את זה בקול שלך.');
+      cheer('מעולה! שמעת את זה בקול שלך.', true);
       if(after) after.hidden = false;
       $('#line-next').disabled = false;
     }
@@ -921,11 +1018,12 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
       if(mic) return;
       state.textContent = 'מקשיב. תגיד את המשפט.';
       manual.hidden = false;
-      listen(mark, function(lvl, loud, voiced){
-        btn.style.setProperty('--lvl', 1 + Math.min(lvl, 2) * .12);
+      var text = L.say.split(' ');
+      var syl = L.syl || text.map(function(w){ return Math.max(1, Math.round(w.replace(/[^א-ת]/g, '').length / 2)); });
+      listen(tracker(text, syl, function(lvl, loud){
+        btn.style.setProperty('--lvl', 1 + lvl * .12);
         btn.style.setProperty('--op', loud ? 1 : .35);
-        if(!holding) light(Math.min(words.length, Math.floor(voiced / MS_PER_WORD)));
-      },function(){ tapMode('אין גישה למיקרופון. תגיד בקול, ואז לחץ ״אמרתי״.'); });
+      }, function(k){ if(!holding) light(k); }, mark), function(){ tapMode('אין גישה למיקרופון. תגיד בקול, ואז לחץ ״אמרתי״.'); });
     });
     manual.addEventListener('click', function(){ tapMode(); });
     return wrap;
