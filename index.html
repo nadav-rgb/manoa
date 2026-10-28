@@ -1037,14 +1037,20 @@ body.dark .music-btn{background:var(--green);color:var(--on-green);border-color:
   function musicDuck(on){ if(!cur) return; cur.ducked = on; fadeTo(cur, on ? cur.level * MUSIC_UNDER : cur.level, on ? .15 : 1.2); }
   // באנדרואיד המיקרופון יכול להעביר את הטלפון למצב שיחה, ואחרי שהוא נסגר המוזיקה לא חזרה.
   // לכן שם, אחרי כל הקלטה, פותחים ערוץ שמע חדש, והמוזיקה ממשיכה בו מאותה נקודה בקטע.
-  var ANDROID = /Android/i.test(navigator.userAgent);
+  // כרום קובע אם ערוץ הוא "מוזיקה" או "שיחה" ברגע שהוא נפתח, וממחזר ערוצים שנסגרו לפני רגע. ערוץ מזמן ההקלטה
+  // משמיע את המוזיקה עמומה וחלשה, כמו בשיחת טלפון. לכן מחכים שנייה שהטלפון יצא ממצב השיחה, והערוצים הישנים
+  // (של המוזיקה ושל המיקרופון) נסגרים רק אחרי שהחדש כבר פתוח, כדי שכרום יפתח ערוץ מוזיקה חדש ולא ימחזר אחד מהם.
+  var ANDROID = /Android/i.test(navigator.userAgent), stale = [], renewTimer = 0;
   function audioRenew(){
-    if(mic || !actx) return;
-    var m = cur, at = m && m.node ? m.from + actx.currentTime - m.t0 : 0;
-    if(m){ try{ if(m.node) m.node.stop(); }catch(e){} cur = null; }
-    var old = actx; actx = null;
-    try{ old.close(); }catch(e){}
-    if(m) musicPlay(m.name, m.level, at);
+    if(mic) return;
+    var old = stale; stale = [];
+    if(actx){
+      var m = cur, at = m ? m.from + (m.node ? actx.currentTime - m.t0 : 0) : 0;
+      if(m){ try{ if(m.node) m.node.stop(); }catch(e){} cur = null; }
+      old.push(actx); actx = null;
+      if(m) musicPlay(m.name, m.level, at); else audio();
+    }
+    setTimeout(function(){ old.forEach(function(c){ try{ c.close(); }catch(e){} }); }, actx ? 1500 : 0);
   }
   // ביטחון: אם ערוץ השמע נעצר (שיחה נכנסת, הקלטה), הנגיעה הבאה במסך מחזירה אותו
   document.addEventListener('pointerdown', function(){
@@ -1146,13 +1152,17 @@ body.dark .music-btn{background:var(--green);color:var(--on-green);border-color:
     if(!mic) return;
     clearInterval(mic.iv);
     mic.stream && mic.stream.getTracks().forEach(function(t){ t.stop(); });
+    try{ if(mic.src) mic.src.disconnect(); }catch(e){}
+    if(ANDROID){
+      // ההקשר של המיקרופון נסגר רק בחידוש, אחרי שערוץ המוזיקה החדש נפתח (ראו audioRenew)
+      stale.push(mic.ctx); mic = null;
+      clearTimeout(renewTimer); renewTimer = setTimeout(audioRenew, 1000);
+      return;
+    }
     try{ mic.ctx.close(); }catch(e){}
     mic = null;
-    if(ANDROID) setTimeout(audioRenew, 600);
-    else{
-      musicDuck(false);
-      if(actx && actx.state !== 'running' && actx.state !== 'closed') actx.resume();
-    }
+    musicDuck(false);
+    if(actx && actx.state !== 'running' && actx.state !== 'closed') actx.resume();
   }
   // מעביר כל 20 מילישניות את עוצמת הקול במיקרופון, בדציבלים.
   function listen(onFrame, onFail){
@@ -1161,7 +1171,7 @@ body.dark .music-btn{background:var(--green);color:var(--on-green);border-color:
     musicDuck(true);
     var ctx = new Ctx();
     if(ctx.state === 'suspended') ctx.resume();
-    mic = { ctx:ctx, stream:null, iv:0 };
+    mic = { ctx:ctx, stream:null, src:null, iv:0 };
     var mine = mic;
     // בלי ביטול הד: המוזיקה שותקת בזמן ההקלטה, וביטול הד מעביר את אנדרואיד למצב שיחה, שאחריו המוזיקה לא חזרה.
     // בלעדיו הקול נכנס חלש יותר, ולכן העוצמה נמדדת בדיוק מלא (float) ולא ב-8 ביט.
@@ -1169,7 +1179,7 @@ body.dark .music-btn{background:var(--green);color:var(--on-green);border-color:
       if(mic !== mine){ stream.getTracks().forEach(function(t){ t.stop(); }); return; }
       mic.stream = stream;
       var an = ctx.createAnalyser(); an.fftSize = 1024;
-      ctx.createMediaStreamSource(stream).connect(an);
+      mic.src = ctx.createMediaStreamSource(stream); mic.src.connect(an);
       var flt = !!an.getFloatTimeDomainData, buf = flt ? new Float32Array(an.fftSize) : new Uint8Array(an.fftSize);
       mic.iv = setInterval(function(){
         if(mic !== mine) return;
