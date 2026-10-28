@@ -292,6 +292,42 @@ body.nav .view:not([hidden]){animation:enter var(--t-view) var(--ease)}
 body.nav #view-done:not([hidden]) .mine,
 body.nav #view-done:not([hidden]) .tagline{animation:rise 520ms var(--ease) both}
 body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
+body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) both}
+
+/* יוצאים לדרך: משפט המחץ, עכשיו או ביומן */
+.punch{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;margin-block-start:30px}
+.punch-a{color:var(--gold-ink);font-weight:700;font-size:1.375rem}
+.punch-b{font-weight:700;font-size:2.4rem;line-height:1.15;color:var(--green)}
+#view-done .btn{margin-block-start:28px}
+#view-done #cal-open{margin-block-start:12px}
+.btn.gold{background:var(--gold);color:var(--green);font-size:1.375rem;min-height:58px}
+.btn.gold:hover:not(:disabled){background:#BF9B52}
+.cal{display:flex;flex-direction:column;gap:12px;margin-block-start:22px}
+.cal-at{
+  font:inherit;font-size:var(--fs-field);min-height:53px;padding:10px 14px;color:var(--green);
+  background:var(--page);border:1px solid var(--line);border-radius:var(--r-field);
+}
+.cal-at:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgb(13 53 45 / .10)}
+#view-done .cal .btn{margin-block-start:4px}
+.cal-note{color:var(--muted);font-size:.9375rem;text-align:center;text-wrap:balance}
+.cal .link{margin:0;min-height:36px;font-size:.9375rem;color:var(--muted)}
+.row-links{display:flex;justify-content:center;gap:18px;margin-block-start:10px}
+.row-links .link{margin:0}
+
+/* ספירה לאחור */
+.blast{
+  position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  padding:24px max(22px, env(safe-area-inset-right, 0px)) 24px max(22px, env(safe-area-inset-left, 0px));
+  background:var(--green);color:var(--on-green);text-align:center;
+}
+.blast-say{color:#B4C8BF;font-size:1.25rem}
+.blast-n{font-weight:700;font-size:10rem;line-height:1;color:var(--gold);font-variant-numeric:tabular-nums}
+.blast-n.pop{animation:count-pop 860ms var(--ease) both}
+@keyframes count-pop{0%{opacity:0;transform:scale(1.7)}22%{opacity:1}100%{opacity:.85;transform:scale(.92)}}
+.blast-go{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;max-width:27rem}
+.blast-word{font-weight:700;font-size:5.5rem;line-height:1;color:var(--gold);margin-block-start:10px}
+.blast-step{font-size:1.375rem;font-weight:500;line-height:1.4;text-wrap:balance}
+.blast .btn{margin-block-start:26px}
 @keyframes rise{from{opacity:0;transform:translateY(10px);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
 
 /* list */
@@ -580,7 +616,7 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
 
   <!-- יוצאים לדרך -->
   <section class="view" id="view-done" aria-labelledby="done-title" hidden>
-    <div class="head" style="margin-block-start:84px">
+    <div class="head" style="margin-block-start:44px">
       <h2 class="title mid" id="done-title" tabindex="-1">יוצאים לדרך.</h2>
     </div>
     <div class="mine">
@@ -589,9 +625,24 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
       <p class="k">הצעד הראשון</p>
       <p class="v" id="done-step"></p>
     </div>
+    <div class="punch">
+      <p class="punch-a">999 אנשים היו עוצרים כאן.</p>
+      <p class="punch-b">אתה האחד שזז.</p>
+    </div>
+    <button class="btn gold" type="button" id="go-now">אני הולך ברגע זה!</button>
+    <button class="btn ghost" type="button" id="cal-open">לקבוע ביומן</button>
+    <div class="cal" id="cal" hidden>
+      <label class="q" for="cal-at">מתי אתה הולך?</label>
+      <input class="cal-at" id="cal-at" type="datetime-local">
+      <button class="btn" type="button" id="cal-add">הוספה ליומן</button>
+      <p class="cal-note" id="cal-note"></p>
+      <button class="link" type="button" id="cal-file">לא נפתח? אפשר להוריד קובץ יומן</button>
+    </div>
     <p class="tagline">#הפחד_לא_ינהל_אותי</p>
-    <button class="btn" type="button" data-go="list">ההחלטות שלי</button>
-    <button class="link" type="button" data-go="home">חזרה להתחלה</button>
+    <div class="row-links">
+      <button class="link" type="button" data-go="list">ההחלטות שלי</button>
+      <button class="link" type="button" data-go="home">חזרה להתחלה</button>
+    </div>
   </section>
 
   <!-- ההחלטות שלי -->
@@ -609,6 +660,18 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
     <p class="empty" id="empty" hidden>עוד אין כאן החלטות. בפעם הבאה שתעמוד מול החלטה מפחידה, תעבור את שלושת השלבים, וההחלטה תישמר כאן.</p>
   </section>
 
+</div>
+
+<!-- אני הולך ברגע זה: ספירה לאחור מ-5, ואז יוצאים -->
+<div class="blast" id="blast" role="dialog" aria-modal="true" aria-label="יוצאים לדרך" hidden>
+  <p class="blast-say" id="blast-say">סופרים יחד, בקול</p>
+  <p class="blast-n" id="blast-n" aria-live="assertive"></p>
+  <div class="blast-go" id="blast-go" hidden>
+    <div id="blast-seal"></div>
+    <p class="blast-word">לך!</p>
+    <p class="blast-step" id="blast-step"></p>
+    <button class="btn gold" type="button" id="blast-done">יצאתי לדרך</button>
+  </div>
 </div>
 
 <script>
@@ -736,10 +799,13 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
     $('#real-what').textContent = d.what;
     go('real');
   });
+  var lastGo = null;
   $('#commit').addEventListener('click', function(){
     var d = finish('go');
+    lastGo = d;
     $('#done-what').textContent = d.what;
     $('#done-step').textContent = d.step + ', ' + d.when;
+    $('#cal').hidden = true; $('#cal-open').hidden = false;
     go('done');
   });
 
@@ -1127,6 +1193,110 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
       box.appendChild(item);
     });
   }
+
+  // אני הולך ברגע זה: ספירה לאחור מ-5 (כלל 5 השניות של מל רובינס), עם צליל ורטט שעולים, ואז "לך!" עם חותם הזהב.
+  var blastTimer = 0;
+  function blast(){
+    var b = $('#blast'), n = $('#blast-n'), say = $('#blast-say'), g = $('#blast-go');
+    b.hidden = false; g.hidden = true; n.hidden = false; say.hidden = false;
+    if(soundOn){
+      try{
+        actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+        if(actx.state === 'suspended') actx.resume();
+      }catch(e){ actx = null; }
+    }
+    var k = 5;
+    (function tick(){
+      if(b.hidden) return;
+      if(k === 0){
+        n.hidden = true; say.hidden = true; g.hidden = false;
+        $('#blast-seal').innerHTML = seal(true);
+        $('#blast-step').textContent = lastGo ? lastGo.step : '';
+        tone([523, 1047, .12, .0001], .9); tone([659, 1319, .09, .0001], .9, .06);
+        if(navigator.vibrate) navigator.vibrate([200, 80, 200]);
+        $('#blast-done').focus({ preventScroll:true });
+        return;
+      }
+      n.textContent = k;
+      n.classList.remove('pop'); void n.offsetWidth; n.classList.add('pop');
+      var f = 330 + (5 - k) * 70;
+      tone([f, f, .1, .0001], .22);
+      if(navigator.vibrate) navigator.vibrate(60);
+      k--;
+      blastTimer = setTimeout(tick, 900);
+    })();
+  }
+  $('#go-now').addEventListener('click', function(){
+    if(lastGo){ lastGo.when = 'עכשיו'; lastGo.now = Date.now(); save(); }
+    $('#done-step').textContent = lastGo ? lastGo.step + ', עכשיו' : '';
+    blast();
+  });
+  $('#blast-done').addEventListener('click', function(){
+    clearTimeout(blastTimer); $('#blast').hidden = true; go('home');
+  });
+
+  // לקבוע ביומן: באייפון נפתח היומן של הטלפון (קובץ יומן שנוצר בטלפון), ובשאר הטלפונים Google Calendar.
+  var IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  function pad(x){ return (x < 10 ? '0' : '') + x; }
+  function localValue(t){ return t.getFullYear() + '-' + pad(t.getMonth() + 1) + '-' + pad(t.getDate()) + 'T' + pad(t.getHours()) + ':' + pad(t.getMinutes()); }
+  function suggestTime(when){
+    var t = new Date();
+    if(when === 'מחר' || when === 'השבוע'){ t.setDate(t.getDate() + (when === 'מחר' ? 1 : 2)); t.setHours(9, 0, 0, 0); }
+    else t.setMinutes(Math.ceil((t.getMinutes() + 60) / 15) * 15, 0, 0);
+    return t;
+  }
+  function utc(t){ return t.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''); }
+  function icsEscape(s){ return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); }
+  // שורות בקובץ יומן מוגבלות ל-75 בתים, ועברית תופסת שני בתים לאות
+  function fold(line){
+    var out = [], cur = '', bytes = 0;
+    Array.from(line).forEach(function(ch){
+      var b = unescape(encodeURIComponent(ch)).length;
+      if(bytes + b > 74){ out.push(cur); cur = ' ' + ch; bytes = 1 + b; }
+      else { cur += ch; bytes += b; }
+    });
+    out.push(cur);
+    return out.join('\r\n');
+  }
+  function eventText(d){ return { title:'הכדור שלי: ' + d.step, details:'החלטתי: ' + d.what + '\n#הפחד_לא_ינהל_אותי' }; }
+  function icsFor(d, start){
+    var e = eventText(d), end = new Date(start.getTime() + 30 * 60000);
+    return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//manoa//he', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'BEGIN:VEVENT',
+      'UID:' + d.id + '@manoa', 'DTSTAMP:' + utc(new Date()), 'DTSTART:' + utc(start), 'DTEND:' + utc(end),
+      'SUMMARY:' + icsEscape(e.title), 'DESCRIPTION:' + icsEscape(e.details),
+      'BEGIN:VALARM', 'TRIGGER:-PT10M', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsEscape(e.title), 'END:VALARM',
+      'END:VEVENT', 'END:VCALENDAR'].map(fold).join('\r\n') + '\r\n';
+  }
+  function calStart(){
+    var v = $('#cal-at').value, t = v ? new Date(v) : null;
+    return t && !isNaN(t) ? t : suggestTime(lastGo && lastGo.when);
+  }
+  $('#cal-open').addEventListener('click', function(){
+    if(!lastGo) return;
+    $('#cal-at').value = localValue(suggestTime(lastGo.when));
+    $('#cal-note').textContent = IOS ? 'נפתח ביומן של הטלפון, עם תזכורת 10 דקות לפני.' : 'ייפתח היומן של גוגל, עם הצעד שכתבת.';
+    $('#cal-open').hidden = true; $('#cal').hidden = false;
+    $('#cal-at').focus({ preventScroll:true });
+    $('#cal').scrollIntoView({ behavior:'smooth', block:'center' });
+  });
+  $('#cal-add').addEventListener('click', function(){
+    if(!lastGo) return;
+    var start = calStart(), e = eventText(lastGo);
+    lastGo.cal = start.getTime(); save();
+    if(IOS){ location.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(icsFor(lastGo, start)); return; }
+    var end = new Date(start.getTime() + 30 * 60000);
+    window.open('https://calendar.google.com/calendar/render?action=TEMPLATE' +
+      '&text=' + encodeURIComponent(e.title) + '&dates=' + utc(start) + '/' + utc(end) +
+      '&details=' + encodeURIComponent(e.details), '_blank', 'noopener');
+  });
+  $('#cal-file').addEventListener('click', function(){
+    if(!lastGo) return;
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([icsFor(lastGo, calStart())], { type:'text/calendar' }));
+    a.download = 'הכדור-שלי.ics';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+  });
 
   show('home');
 })();
