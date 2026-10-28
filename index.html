@@ -437,8 +437,7 @@ body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) 
         <div class="box"><textarea id="worst" rows="1" dir="rtl" placeholder="יגידו לי לא, ויהיה לא נעים"></textarea></div>
       </div>
     </div>
-    <button class="btn" type="button" data-go="m2">הבא</button>
-    <p class="optional">אפשר גם רק לחשוב, בלי לכתוב.</p>
+    <button class="btn" type="button" id="to-m2" data-go="m2" disabled>הבא</button>
   </section>
 
   <!-- השכל 2: החבר -->
@@ -724,6 +723,7 @@ body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) 
   function saveDraft(){ store.set(KEY_DRAFT, draft); }
   function validate(){
     $('#to-m1').disabled = !draft.what.trim();
+    $('#to-m2').disabled = !(draft.best.trim() && draft.worst.trim());
     $('#commit').disabled = !(draft.step.trim() && draft.when);
   }
   FIELDS.forEach(function(id){
