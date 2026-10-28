@@ -324,6 +324,28 @@ body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) 
 .row-links{display:flex;justify-content:center;gap:18px;margin-block-start:10px}
 .row-links .link{margin:0}
 
+/* אתה מלך: משפטים שנבראים אות אחרי אות ונשארים */
+body.dark{background:var(--green)}
+body.dark .music-btn{background:var(--green);color:var(--on-green);border-color:rgb(250 248 246 / .28)}
+.fin-lines{display:flex;flex-direction:column;align-items:center;gap:22px;padding-block:38vh 8px}
+.fin-line{font-weight:700;font-size:1.5rem;line-height:1.4;text-align:center;text-wrap:balance;color:var(--on-green);transition:opacity 1.6s var(--ease)}
+.fin-line.gold{color:var(--gold)}
+.fin-line.past{opacity:.55}
+.fin-line .w{white-space:nowrap}
+.fin-line .ch{opacity:0;filter:blur(7px);animation:born 1100ms var(--ease) forwards;animation-delay:calc(var(--i) * 60ms)}
+@keyframes born{to{opacity:1;filter:blur(0)}}
+.fin-end{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding-block:40px 30px;animation:rise 1200ms var(--ease) both}
+.fin-king{font-weight:700;font-size:3.6rem;line-height:1.1}
+.fin-king .shine{
+  background:linear-gradient(100deg, #CBA964 0%, #CBA964 42%, #FFF1C4 50%, #CBA964 58%, #CBA964 100%);
+  background-size:250% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+.fin-tag{color:var(--gold);font-weight:700;font-size:1.25rem}
+.fin-credit{color:#B4C8BF;font-size:.875rem;text-wrap:balance;margin-block-start:6px}
+#view-finale .btn{margin-block-start:22px}
+.fin-skip{color:#B4C8BF;text-decoration-color:rgb(250 248 246 / .25);margin-block-start:18px}
+@media (prefers-reduced-motion: reduce){ .fin-line .ch{opacity:1;filter:none} }
+
 /* מוזיקת רקע */
 .music-btn{
   position:fixed;z-index:40;inset-inline-end:max(14px, env(safe-area-inset-left, 0px));bottom:max(14px, env(safe-area-inset-bottom, 0px));
@@ -522,7 +544,12 @@ body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) 
 
   <!-- לא -->
   <section class="view" id="view-no" aria-labelledby="no-title" hidden>
-    <div class="head" style="margin-block-start:84px">
+    <div class="top">
+      <button class="back" type="button" id="no-back" aria-label="חזרה">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+    <div class="head" style="margin-block-start:40px">
       <h2 class="title mid" id="no-title" tabindex="-1">זה לא הכדור שלך.</h2>
       <p class="sub">מותר לוותר עליו. כשהשכל אומר לא, זו לא בריחה. זו החלטה.</p>
     </div>
@@ -598,7 +625,12 @@ body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) 
 
   <!-- סיבה אמיתית -->
   <section class="view" id="view-real" aria-labelledby="real-title" hidden>
-    <div class="head" style="margin-block-start:84px">
+    <div class="top">
+      <button class="back" type="button" id="real-back" aria-label="חזרה">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+    <div class="head" style="margin-block-start:40px">
       <h2 class="title mid" id="real-title" tabindex="-1">זו לא פחדנות.</h2>
       <p class="sub">סיבה אמיתית היא סיבה טובה לעצור. רק תוודא שזו באמת סיבה, ולא הפחד בתחפושת.</p>
     </div>
@@ -667,6 +699,19 @@ body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) 
     </div>
   </section>
 
+  <!-- אחרי היומן: משפטי מחץ שנבראים לאט עם המוזיקה, ונשארים כתובים -->
+  <section class="view" id="view-finale" aria-labelledby="finale-title" hidden>
+    <h2 class="sr-only" id="finale-title" tabindex="-1">לפני שאתה יוצא לדרך</h2>
+    <div class="fin-lines" id="fin-lines" aria-live="polite"></div>
+    <div class="fin-end" id="fin-end" hidden>
+      <p class="fin-king"><span class="shine">אתה מלך.</span></p>
+      <p class="fin-tag">#הפחד_לא_ינהל_אותי</p>
+      <button class="btn gold" type="button" id="fin-done">סיום</button>
+      <p class="fin-credit" id="fin-credit"></p>
+    </div>
+    <button class="link fin-skip" type="button" id="fin-skip">לסוף</button>
+  </section>
+
   <!-- ההחלטות שלי -->
   <section class="view" id="view-list" aria-labelledby="list-title" hidden>
     <div class="top">
@@ -716,7 +761,7 @@ body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) 
   var draft = Object.assign(emptyDraft(), store.get(KEY_DRAFT, {}) || {});
 
   var $ = function(s){ return document.querySelector(s); };
-  var VIEWS = ['home','what','m1','m2','m3','verdict','no','brake','real','engine','lines','ball','done','list'];
+  var VIEWS = ['home','what','m1','m2','m3','verdict','no','brake','real','engine','lines','ball','done','finale','list'];
   var FIELDS = ['what','best','worst','friend','step'];
   var REGRET = { did:'שעשיתי', didnt:'שלא עשיתי' };
 
@@ -724,6 +769,8 @@ body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) 
     VIEWS.forEach(function(v){ $('#view-' + v).hidden = (v !== name); });
     breathReset(); micStop();
     musicFor(name);
+    document.body.classList.toggle('dark', name === 'finale');
+    if(name === 'finale') finaleStart(); else finaleStop();
     if(name === 'verdict') renderRecap();
     if(name === 'list') renderList();
     if(name === 'lines') renderLine();
@@ -815,11 +862,29 @@ body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) 
     };
     list.unshift(d);
     store.set(KEY_LIST, list);
+    undoable = { id:d.id, draft:Object.assign({}, draft) };
     draft = emptyDraft(); saveDraft();
     FIELDS.forEach(function(id){ $('#' + id).value = ''; });
     syncPills(); validate();
     return d;
   }
+
+  // חזרה ממסך סיום שהגיעו אליו בלחיצה אחת ("לא" או "סיבה אמיתית"): מבטלים את השמירה ומחזירים את מה שכתבת
+  var undoable = null;
+  function undoFinish(to){
+    if(undoable){
+      var id = undoable.id;
+      list = list.filter(function(x){ return x.id !== id; });
+      store.set(KEY_LIST, list);
+      draft = Object.assign(emptyDraft(), undoable.draft); saveDraft();
+      FIELDS.forEach(function(f){ $('#' + f).value = draft[f] || ''; });
+      syncPills(); validate();
+      undoable = null;
+    }
+    go(to);
+  }
+  $('#no-back').addEventListener('click', function(){ undoFinish('verdict'); });
+  $('#real-back').addEventListener('click', function(){ undoFinish('brake'); });
 
   $('#verdict-no').addEventListener('click', function(){
     var d = finish('no');
@@ -890,8 +955,9 @@ body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) 
   // מוזיקת רקע (Pixabay, רישיון חופשי): Cinematic Powerful של AtlasAudio בשלבים השקטים של המנוע,
   // ו-Inspiring Cinematic Music של Tunetank ב"יוצאים לדרך". הקובץ נטען רק כשמתקרבים למסך שלו ומתנגן חלש בלולאה.
   // היא עוברת דרך Web Audio כמו צלילי הנשימה, ולכן באייפון שעל "שקט" היא בדרך כלל לא נשמעת. אפשר לכבות אותה.
-  var MUSIC = { engine:'music/engine.mp3', done:'music/done.mp3' };
-  var VIEW_MUSIC = { engine:['engine', .16], lines:['engine', .24], done:['done', .28] };
+  // במסך הסיום: Majestic Triumphant Epic Music של alex-morgan.
+  var MUSIC = { engine:'music/engine.mp3', done:'music/done.mp3', finale:'music/finale.mp3' };
+  var VIEW_MUSIC = { engine:['engine', .16], lines:['engine', .24], done:['done', .28], finale:['finale', .38] };
   var musicOn = store.get('manoa.music', true) !== false;
   var raw = {}, bufs = {}, cur = null;
   function audio(){
@@ -947,11 +1013,14 @@ body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) 
     btn.setAttribute('aria-pressed', String(musicOn));
     if(name === 'brake') prefetch('engine');
     if(name === 'ball') prefetch('done');
+    if(name === 'done') prefetch('finale');
     if(m) musicPlay(m[0], m[1]); else musicStop();
   }
   $('#music-btn').addEventListener('click', function(){
-    musicOn = !musicOn; store.set('manoa.music', musicOn);
     var v = VIEWS.filter(function(x){ return !$('#view-' + x).hidden; })[0];
+    // אחרי חזרה מהיומן הדף נטען בלי לחיצה, ולכן המוזיקה עוד לא התחילה: הלחיצה הראשונה מפעילה אותה
+    if(musicOn && !cur){ musicFor(v); return; }
+    musicOn = !musicOn; store.set('manoa.music', musicOn);
     if(musicOn) musicFor(v); else { musicStop(.4); $('#music-btn').setAttribute('aria-pressed', 'false'); }
   });
 
@@ -1396,6 +1465,7 @@ body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) 
     if(!lastGo) return;
     var start = calStart(), e = eventText(lastGo);
     lastGo.cal = start.getTime(); save();
+    toFinale();
     if(IOS){ location.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(icsFor(lastGo, start)); return; }
     var end = new Date(start.getTime() + 30 * 60000);
     window.open('https://calendar.google.com/calendar/render?action=TEMPLATE' +
@@ -1409,9 +1479,78 @@ body.nav #view-done:not([hidden]) .punch{animation:rise 620ms 260ms var(--ease) 
     a.download = 'הכדור-שלי.ics';
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+    toFinale();
   });
 
-  show('home');
+  // אחרי היומן: משפטי מחץ שנבראים אות אחרי אות, לאט, עם המוזיקה, ונשארים כתובים.
+  // הקודמים מתעמעמים קצת כשמשפט חדש נברא, והמסך גולל לאט אל החדש. בסוף: "אתה מלך."
+  var FINALE = [
+    { t:'999 עצרו. אתה זזת.' },
+    { t:'ביקשת את הכדור. עכשיו תבעט.' },
+    { t:'ישיבת ההנהלה בראש? נסגרה.' },
+    { t:'הים נקרע רק אחרי הצעד הראשון.' },
+    { t:'כל "לא" שתקבל בונה אותך.' },
+    { t:'הפחד הוא הדלק שלך, לא הבלם.', gold:true },
+    { t:'רוץ בכל הכוח.' },
+    { t:'התרחק מאנשים שרוצים להוריד אותך.' },
+    { t:'אל תיתן ל"מה יחשבו" להחליט בשבילך.' },
+    { t:'יש בך כוחות שעוד לא הכרת.' },
+    { t:'מעוגן? כבר לא. מנוע.', gold:true }
+  ];
+  var FINALE_CREDIT = '';
+  var finTimer = 0;
+  function toFinale(){
+    // באייפון קובץ היומן עלול לטעון את הדף מחדש. הסימון הזה מחזיר אותך לכאן כשתחזור
+    store.set('manoa.finale', Date.now());
+    setTimeout(function(){ go('finale'); }, 600);
+  }
+  function finaleLine(L){
+    var p = el('p', 'fin-line' + (L.gold ? ' gold' : '')), n = 0;
+    L.t.split(' ').forEach(function(word, wi){
+      if(wi) p.appendChild(document.createTextNode(' '));
+      var w = el('span', 'w');
+      Array.from(word).forEach(function(ch){
+        var c = el('span', 'ch', ch);
+        c.style.setProperty('--i', n++);
+        w.appendChild(c);
+      });
+      p.appendChild(w);
+    });
+    return { p:p, letters:n };
+  }
+  function finaleStart(){
+    store.set('manoa.finale', 0);
+    var box = $('#fin-lines');
+    box.textContent = ''; $('#fin-end').hidden = true; $('#fin-skip').hidden = false;
+    $('#fin-credit').textContent = FINALE_CREDIT;
+    clearTimeout(finTimer);
+    var i = 0;
+    (function next(){
+      if(i >= FINALE.length) return finaleEnd();
+      var made = finaleLine(FINALE[i++]);
+      Array.prototype.forEach.call(box.children, function(x){ x.classList.add('past'); });
+      box.appendChild(made.p);
+      made.p.scrollIntoView({ behavior:'smooth', block:'center' });
+      finTimer = setTimeout(next, made.letters * 60 + 1100 + 2200);
+    })();
+  }
+  function finaleEnd(){
+    clearTimeout(finTimer);
+    $('#fin-skip').hidden = true; $('#fin-end').hidden = false;
+    setTimeout(function(){ $('#fin-end').scrollIntoView({ behavior:'smooth', block:'end' }); }, 50);
+  }
+  function finaleStop(){ clearTimeout(finTimer); }
+  $('#fin-skip').addEventListener('click', function(){
+    clearTimeout(finTimer);
+    var box = $('#fin-lines');
+    for(var i = box.children.length; i < FINALE.length; i++) box.appendChild(finaleLine(FINALE[i]).p);
+    finaleEnd();
+  });
+  $('#fin-done').addEventListener('click', function(){ go('home'); });
+
+  var finAt = store.get('manoa.finale', 0);
+  if(finAt && Date.now() - finAt < 15 * 60000) show('finale');
+  else show('home');
 })();
 </script>
 </body>
