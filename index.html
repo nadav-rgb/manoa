@@ -66,6 +66,7 @@ button{font:inherit;color:inherit}
 ::selection{background:var(--wash);color:var(--green)}
 :focus-visible{outline:2px solid var(--green);outline-offset:3px}
 [tabindex="-1"]:focus{outline:none}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
 .app{
   max-width:27rem;margin-inline:auto;
@@ -183,6 +184,32 @@ body.nav .view:not([hidden]){animation:enter var(--t-view) var(--ease)}
 .line .k{color:var(--muted);margin-inline-end:6px}
 .verdict-lead{color:var(--muted);text-align:center;margin-block-start:36px}
 .verdict-q{font-weight:700;font-size:1.75rem;line-height:1.3;text-align:center;text-wrap:balance;margin-block-start:4px}
+
+/* engine: breathing */
+.breath{position:relative;display:grid;place-items:center;height:264px;margin-block-start:30px}
+.guide{position:absolute;width:240px;height:240px;border-radius:50%;border:1.5px dashed rgb(168 133 58 / .45)}
+.orb{
+  width:240px;height:240px;border-radius:50%;
+  background:radial-gradient(circle at 50% 42%, #24604F 0%, var(--green) 72%);
+  transform:scale(.5);transition-property:transform;transition-timing-function:cubic-bezier(.45,0,.55,1);
+}
+.sec{position:absolute;inset:0;display:grid;place-items:center;color:var(--on-green);font-weight:700;font-size:2.25rem;font-variant-numeric:tabular-nums}
+.cue{font-weight:700;font-size:1.75rem;line-height:1.3;text-align:center;margin-block-start:18px;min-height:2.3rem}
+.cue-sub{color:var(--muted);text-align:center;min-height:1.8rem;text-wrap:balance}
+.cue-count{color:var(--muted);font-size:var(--fs-small);text-align:center;margin-block-start:6px;min-height:1.3rem}
+#view-engine .btn{margin-block-start:28px}
+
+/* engine: lines */
+.lines{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:16px;min-height:46vh;margin-block-start:24px}
+.line-big{font-weight:700;font-size:1.75rem;line-height:1.35;text-wrap:balance}
+.line-small{color:var(--muted);font-size:var(--fs-body);text-wrap:balance}
+.line-who{color:var(--gold-ink);font-weight:500;font-size:1rem}
+.dots{display:flex;justify-content:center;gap:8px;margin-block-start:20px}
+.dots span{width:7px;height:7px;border-radius:50%;background:var(--line);transition:background-color var(--t-hover) var(--ease)}
+.dots .on{background:var(--gold)}
+.lines.go > *{animation:rise 520ms var(--ease) both}
+.lines.go > :nth-child(2){animation-delay:140ms}
+.lines.go > :nth-child(3){animation-delay:280ms}
 
 /* endings */
 .mine{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;margin-block-start:40px}
@@ -388,8 +415,47 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
     </div>
     <div class="choices">
       <button class="choice" type="button" id="brake-real"><b>סיבה אמיתית</b><span>משפחה, בריאות, ערכים, פרנסה</span></button>
-      <button class="choice" type="button" data-go="ball"><b>רק הפחד</b><span>פדיחה, דחייה, ״מה יחשבו״</span></button>
+      <button class="choice" type="button" data-go="engine"><b>רק הפחד</b><span>פדיחה, דחייה, ״מה יחשבו״</span></button>
     </div>
+  </section>
+
+  <!-- המנוע: נשימה -->
+  <section class="view" id="view-engine" aria-labelledby="engine-title" hidden>
+    <div class="top">
+      <button class="back" type="button" data-go="brake" aria-label="חזרה">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+      <p class="steps" aria-hidden="true"><span class="done">1</span><span class="done">2</span><span>3</span></p>
+    </div>
+    <div class="head">
+      <h2 class="title" id="engine-title" tabindex="-1">המנוע.</h2>
+      <p class="sub" id="engine-sub"></p>
+    </div>
+    <div class="breath" aria-hidden="true">
+      <div class="guide"></div>
+      <div class="orb" id="orb"></div>
+      <p class="sec" id="sec"></p>
+    </div>
+    <p class="cue" id="cue" aria-live="polite"></p>
+    <p class="cue-sub" id="cue-sub"></p>
+    <p class="cue-count" id="cue-count"></p>
+    <button class="btn" type="button" id="breath-start">מתחילים לנשום</button>
+    <button class="btn" type="button" id="breath-next" hidden>הבא</button>
+    <button class="link" type="button" id="breath-skip">דלג על הנשימות</button>
+  </section>
+
+  <!-- המנוע: הדמיון -->
+  <section class="view" id="view-lines" aria-labelledby="lines-title" hidden>
+    <div class="top">
+      <button class="back" type="button" id="lines-back" aria-label="חזרה">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+      <p class="steps" aria-hidden="true"><span class="done">1</span><span class="done">2</span><span>3</span></p>
+    </div>
+    <h2 class="sr-only" id="lines-title" tabindex="-1">המנוע</h2>
+    <div class="lines" id="lines" aria-live="polite"></div>
+    <div class="dots" id="dots" aria-hidden="true"></div>
+    <button class="btn" type="button" id="line-next">הבא</button>
   </section>
 
   <!-- סיבה אמיתית -->
@@ -406,7 +472,7 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
   <!-- הכדור -->
   <section class="view" id="view-ball" aria-labelledby="ball-title" hidden>
     <div class="top">
-      <button class="back" type="button" data-go="brake" aria-label="חזרה">
+      <button class="back" type="button" id="ball-back" aria-label="חזרה">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
       </button>
       <p class="steps" aria-label="שלב 3 מתוך 3"><span class="done">1</span><span class="done">2</span><span class="now">3</span></p>
@@ -479,14 +545,16 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
   var draft = Object.assign(emptyDraft(), store.get(KEY_DRAFT, {}) || {});
 
   var $ = function(s){ return document.querySelector(s); };
-  var VIEWS = ['home','what','m1','m2','m3','verdict','no','brake','real','ball','done','list'];
+  var VIEWS = ['home','what','m1','m2','m3','verdict','no','brake','real','engine','lines','ball','done','list'];
   var FIELDS = ['what','best','worst','friend','step'];
   var REGRET = { did:'שעשיתי', didnt:'שלא עשיתי' };
 
   function show(name){
     VIEWS.forEach(function(v){ $('#view-' + v).hidden = (v !== name); });
+    breathReset();
     if(name === 'verdict') renderRecap();
     if(name === 'list') renderList();
+    if(name === 'lines') renderLine();
     if(name === 'home') renderCount();
     window.scrollTo(0, 0);
     var h = $('#view-' + name + ' [tabindex="-1"]');
@@ -594,6 +662,91 @@ body.nav #view-done:not([hidden]) .tagline{animation-delay:220ms}
     $('#done-step').textContent = d.step + ', ' + d.when;
     go('done');
   });
+
+  // המנוע: נשימה. אנחה פיזיולוגית חוזרת (cyclic sighing, Balban et al. 2023): שאיפה, השלמה קצרה, נשיפה ארוכה.
+  // כל שלב מגדיר לאן העיגול מגיע (to) ובכמה שניות (sec).
+  var BREATH = {
+    sub: 'קודם הגוף. שלוש נשימות.',
+    cycles: 3,
+    phases: [
+      { cue:'שאיפה', sub:'דרך האף', to:.85, sec:3 },
+      { cue:'ועוד קצת', sub:'עוד שאיפה קטנה, למלא את הריאות', to:1, sec:1 },
+      { cue:'נשיפה ארוכה', sub:'לאט, דרך הפה', to:.5, sec:7 }
+    ],
+    after: 'לא צריך להיות רגוע לגמרי. מספיק שהשיא ירד.'
+  };
+  var orb = $('#orb'), sec = $('#sec'), cue = $('#cue'), cueSub = $('#cue-sub'), cueCount = $('#cue-count');
+  var timers = [];
+  function later(fn, ms){ timers.push(setTimeout(fn, ms)); }
+  function breathReset(){
+    timers.forEach(clearTimeout); timers = [];
+    orb.style.transitionDuration = '0s'; orb.style.transform = 'scale(.5)';
+    sec.textContent = ''; cue.textContent = ''; cueCount.textContent = '';
+    cueSub.textContent = 'נושמים יחד עם העיגול: הוא גדל כשמכניסים אוויר, וקטן לאט כשמוציאים.';
+    $('#engine-sub').textContent = BREATH.sub;
+    $('#breath-start').hidden = false; $('#breath-next').hidden = true; $('#breath-skip').hidden = false;
+  }
+  function runBreath(){
+    $('#breath-start').hidden = true;
+    var c = 0, i = 0;
+    function step(){
+      if(i >= BREATH.phases.length){ i = 0; c++; }
+      if(c >= BREATH.cycles) return finishBreath();
+      var p = BREATH.phases[i++];
+      cue.textContent = p.cue; cueSub.textContent = p.sub;
+      cueCount.textContent = 'נשימה ' + (c + 1) + ' מתוך ' + BREATH.cycles;
+      void orb.offsetWidth;
+      orb.style.transitionDuration = p.sec + 's';
+      orb.style.transform = 'scale(' + p.to + ')';
+      var whole = Math.round(p.sec) === p.sec;
+      sec.textContent = whole ? p.sec : '';
+      if(whole) for(var k = 1; k < p.sec; k++) (function(k){ later(function(){ sec.textContent = p.sec - k; }, k * 1000); })(k);
+      later(step, p.sec * 1000);
+    }
+    step();
+  }
+  function finishBreath(){
+    sec.textContent = ''; cueCount.textContent = '';
+    cue.textContent = 'יפה.'; cueSub.textContent = BREATH.after;
+    $('#breath-skip').hidden = true; $('#breath-next').hidden = false;
+    $('#breath-next').focus({ preventScroll:true });
+  }
+  $('#breath-start').addEventListener('click', runBreath);
+  $('#breath-skip').addEventListener('click', function(){ lineIdx = 0; go('lines'); });
+  $('#breath-next').addEventListener('click', function(){ lineIdx = 0; go('lines'); });
+
+  // המנוע: הדמיון. כרטיס אחד בכל פעם, בקצב של האדם.
+  // הסדר לפי המחקר: לתייג את העוררות כהתרגשות (Brooks 2014), לדמיין את התוצאה ואת המחיר של לא לעשות
+  // (Gilovich & Medvec 1995), לפגוש את המכשול (WOOP, Oettingen), ורק אז הצעד הראשון ומתי (Gollwitzer 2006).
+  var LINES = [
+    { big:'מה שנשאר בגוף עכשיו, זה לא רק פחד.', small:'אותו לב דופק גם בהתרגשות. תגיד לעצמך בשקט: אני מתרגש.' },
+    { big:'״האושר הכי גדול בחיים שלך ממתין לך מטר אחרי הפחד הכי גדול שלך.״', who:'וויל סמית׳' },
+    { big:'עכשיו תדמיין: עשית את זה.', small:'איך אתה עומד? איך הכתפיים? איפה בגוף אתה מרגיש את זה? תישאר שם שלוש נשימות.' },
+    { big:'מה יספרו עליך הנכדים שלך?', small:'שפחדת ולא עשית, ונשארת בינוני? או שנכנסת בכל הכוח, נגד כל הסיכויים, והצלחת?' },
+    { big:'תדמיין: עברה שנה. מישהו אחר עומד במקום שהיה צריך להיות שלך.', small:'איך זה מרגיש בגוף? אתה באמת רוצה להיות שם?' },
+    { big:'אפשר לנצח 99% מהאנשים, אם שולטים בבושה שבדחייה, בשעמום שבחזרתיות, ובכאב שבביקורת.', who:'אלכס הורמוזי', small:'הבושה שאתה מרגיש עכשיו היא בדיוק הדבר שרוב האנשים לא עוברים. אתה כבר באמצע.' }
+  ];
+  var lineIdx = 0;
+  function renderLine(){
+    var box = $('#lines'), L = LINES[lineIdx];
+    box.classList.remove('go'); box.textContent = '';
+    box.appendChild(el('p', 'line-big', L.big));
+    if(L.who) box.appendChild(el('p', 'line-who', L.who));
+    if(L.small) box.appendChild(el('p', 'line-small', L.small));
+    void box.offsetWidth; box.classList.add('go');
+    var dots = $('#dots'); dots.textContent = '';
+    LINES.forEach(function(_, n){ dots.appendChild(el('span', n === lineIdx ? 'on' : '')); });
+    $('#line-next').textContent = lineIdx === LINES.length - 1 ? 'אני הולך לשם' : 'הבא';
+  }
+  $('#line-next').addEventListener('click', function(){
+    if(lineIdx < LINES.length - 1){ lineIdx++; renderLine(); return; }
+    go('ball');
+  });
+  $('#lines-back').addEventListener('click', function(){
+    if(lineIdx > 0){ lineIdx--; renderLine(); return; }
+    go('engine');
+  });
+  $('#ball-back').addEventListener('click', function(){ lineIdx = LINES.length - 1; go('lines'); });
 
   function gematria(n){
     if(n === 15) return 'ט״ו';
