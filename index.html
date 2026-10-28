@@ -1034,8 +1034,8 @@ body.dark .music-btn{background:var(--green);color:var(--on-green);border-color:
   // בזמן שהמיקרופון מקשיב המוזיקה משתתקת. ניסינו להשאיר אותה בשקט מתחת לקול, אבל בטלפון אמיתי (אנדרואיד)
   // המיקרופון מגביר אותה אוטומטית, והמערכת חשבה שהדיבור לא נגמר. musicDb נשאר, כדי שהסף יעלה אם בכל זאת נשאר צליל
   var MUSIC_UNDER = 0, mbuf = new Uint8Array(1024);
-  function musicDuck(on){ if(!cur) return; cur.ducked = on; fadeTo(cur, on ? cur.level * MUSIC_UNDER : cur.level, on ? .4 : 1.2); }
-  // באנדרואיד המיקרופון יכול להעביר את הטלפון למצב שיחה, ואחרי שהוא נסגר הצליל של הדף לפעמים לא חוזר.
+  function musicDuck(on){ if(!cur) return; cur.ducked = on; fadeTo(cur, on ? cur.level * MUSIC_UNDER : cur.level, on ? .15 : 1.2); }
+  // באנדרואיד המיקרופון יכול להעביר את הטלפון למצב שיחה, ואחרי שהוא נסגר המוזיקה לא חזרה.
   // לכן שם, אחרי כל הקלטה, פותחים ערוץ שמע חדש, והמוזיקה ממשיכה בו מאותה נקודה בקטע.
   var ANDROID = /Android/i.test(navigator.userAgent);
   function audioRenew(){
@@ -1163,18 +1163,19 @@ body.dark .music-btn{background:var(--green);color:var(--on-green);border-color:
     if(ctx.state === 'suspended') ctx.resume();
     mic = { ctx:ctx, stream:null, iv:0 };
     var mine = mic;
-    // בלי ביטול הד: המוזיקה שותקת בזמן ההקלטה, וביטול הד מעביר את הטלפון למצב שיחה
+    // בלי ביטול הד: המוזיקה שותקת בזמן ההקלטה, וביטול הד מעביר את אנדרואיד למצב שיחה, שאחריו המוזיקה לא חזרה.
+    // בלעדיו הקול נכנס חלש יותר, ולכן העוצמה נמדדת בדיוק מלא (float) ולא ב-8 ביט.
     navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:false, noiseSuppression:true } }).then(function(stream){
       if(mic !== mine){ stream.getTracks().forEach(function(t){ t.stop(); }); return; }
       mic.stream = stream;
       var an = ctx.createAnalyser(); an.fftSize = 1024;
       ctx.createMediaStreamSource(stream).connect(an);
-      var buf = new Uint8Array(an.fftSize);
+      var flt = !!an.getFloatTimeDomainData, buf = flt ? new Float32Array(an.fftSize) : new Uint8Array(an.fftSize);
       mic.iv = setInterval(function(){
         if(mic !== mine) return;
-        an.getByteTimeDomainData(buf);
-        var s = 0;
-        for(var i = 0; i < buf.length; i++){ var v = (buf[i] - 128) / 128; s += v * v; }
+        var s = 0, i;
+        if(flt){ an.getFloatTimeDomainData(buf); for(i = 0; i < buf.length; i++) s += buf[i] * buf[i]; }
+        else{ an.getByteTimeDomainData(buf); for(i = 0; i < buf.length; i++){ var v = (buf[i] - 128) / 128; s += v * v; } }
         onFrame(performance.now(), 20 * Math.log10(Math.sqrt(s / buf.length) + 1e-5), musicDb());
       }, 20);
     }).catch(function(){ if(mic === mine){ micStop(); onFail(); } });
@@ -1192,7 +1193,7 @@ body.dark .music-btn{background:var(--green);color:var(--on-green);border-color:
     syl.forEach(function(n){ cum.push(cum[cum.length - 1] + n); });
     var total = cum[cum.length - 1], marks = [];
     words.forEach(function(w, i){ if(/,$/.test(w) && i < words.length - 1) marks.push(cum[i + 1]); });
-    var t0 = 0, last = 0, floorSum = 0, floorN = 0, s;
+    var t0 = 0, last = 0, cal = [], floor = -60, s;
     // מוזיקה שמתנגנת בזמן ההקלטה: בזמן הכיול לומדים כמה חזק היא מגיעה למיקרופון ביחס למה שמנגנים (offset),
     // ואחר כך הסף עולה ויורד יחד עם המוזיקה, כך שרק קול חזק ממנה ב-MUSIC_MARGIN נחשב לדיבור
     // בהתחלה המיקרופון עוד לא מעביר קול, ולכן מתעלמים מ-150 המילישניות הראשונות. לוקחים את ההפרש הגדול ביותר,
@@ -1205,14 +1206,28 @@ body.dark .music-btn{background:var(--green);color:var(--on-green);border-color:
       var dt = now - last; last = now;
       // כשהמוזיקה שותקת שוכחים את העוצמות הקודמות שלה, כדי שלא ימשיכו להחזיק את הסף גבוה
       if(mdb > -70){ recent.push(mdb); if(recent.length > 6) recent.shift(); } else recent.length = 0;
+      // שקט דיגיטלי (אפסים, למשל ברגע שהמיקרופון נפתח) לא נחשב לרעש הרקע.
+      // גם רגעים שבהם המוזיקה עוד דועכת לא נכנסים לכיול: בלי ביטול הד המיקרופון שומע אותה מהרמקול של הטלפון.
+      var real = db > -95;
       if(now - t0 < 600){
         if(now - t0 > 150){
-          floorSum += db; floorN++;
+          if(real && mdb <= -70) cal.push(db);
           if(mdb > -70){ off = Math.max(off, db - mdb); offN++; }
         }
         return;
       }
-      var gate = Math.max(floorSum / Math.max(floorN, 1), -60) + SYNC.gateDb;
+      // רעש הרקע: האחוזון ה-30 של הכיול, כך שמי שמתחיל לדבר מיד לא מרים אותו לגובה הקול שלו.
+      // אחר כך הוא ממשיך להתעדכן: יורד לאט ברגעים שקטים יותר, ועולה בחצי דציבל לשנייה כשלא מדברים והחדר נעשה רועש.
+      // בזמן דיבור הוא לא עולה, אלא אם ה"דיבור" נמשך יותר מהמשפט כולו (כנראה רעש קבוע), ואז הוא עולה מהר.
+      if(cal){
+        if(cal.length){ cal.sort(function(a, b){ return a - b; }); floor = cal[Math.floor(cal.length * .3)]; }
+        cal = null;
+      }
+      // אחרי הכיול גם שקט מוחלט מוריד אותו (עד 80-), כדי שמי שדיבר כבר בזמן הכיול ייקלט ברגע שהוא עוצר
+      var q = Math.max(db, -80);
+      if(q < floor) floor += (q - floor) * .03;
+      else if(real && (!s.inUtt || s.talk > total * s.mps)) floor += Math.min(q - floor, 1) * dt / (s.inUtt ? 500 : 2000);
+      var gate = Math.max(floor, -70) + SYNC.gateDb;
       if(offN && recent.length) gate = Math.max(gate, Math.max.apply(null, recent) + off + SYNC.musicMargin);
       onLevel(Math.max(0, Math.min((db - gate) / 12, 2)), db > gate);
       if(db > gate){
